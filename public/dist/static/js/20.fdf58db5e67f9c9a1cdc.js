@@ -1,0 +1,1 @@
+webpackJsonp([20],{h2vt:function(e,t,n){"use strict";Object.defineProperty(t,"__esModule",{value:!0});var r={render:function(){var e=this.$createElement;return(this._self._c||e)("div",{staticClass:"wapper"},[this._v("\n\t403 无权访问该页面\n")])},staticRenderFns:[]};var s=n("VU/8")({},r,!1,function(e){n("yYAk")},null,null);t.default=s.exports},yYAk:function(e,t){}});
