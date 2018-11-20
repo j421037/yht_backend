@@ -159,7 +159,9 @@ Route::group(['middleware' => 'refresh.token'], function() {
     Route::post('receivebill/all', 'ReceivebillController@all');
     Route::post('receivebill/update', 'ReceivebillController@update');
     /**退货单**/
-    Route::post('refund/add','RefundController@store');
+    Route::post('refund/store','RefundController@store');
+    Route::post('refund/all', 'RefundController@all');
+    Route::post('refund/delete', 'RefundController@del');
     /**更新退货**/
     Route::post('refund/update', 'RefundController@update');
     /**数据汇总查询**/

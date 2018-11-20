@@ -17,4 +17,9 @@ class Role extends Model
     {
     	return $this->belongsToMany('App\Permission')->select('id','name', 'front_path','backend_path', 'node_type', 'pid');
     }
+
+    public function permissionAll()
+    {
+        return $this->belongsToMany('App\Permission');
+    }
 }

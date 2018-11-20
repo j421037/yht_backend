@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use JWTAuth;
 use Illuminate\Foundation\Bus\DispatchesJobs;
 use Illuminate\Routing\Controller as BaseController;
 use Illuminate\Foundation\Validation\ValidatesRequests;
@@ -10,6 +11,8 @@ use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 class Controller extends BaseController
 {
     use AuthorizesRequests, DispatchesJobs, ValidatesRequests;
+
+
     /**
     *过滤空格
 	*@param Array $data
@@ -26,5 +29,17 @@ class Controller extends BaseController
     protected function _Trimap($item)
     {
     	return trim($item);
+    }
+
+    protected  function getUser()
+    {
+        $user = JWTAuth::parseToken()->authenticate()->getAttributes();
+        $obj = new \stdClass();
+
+        foreach ($user as $k => $v) {
+            $obj->$k = $v;
+        }
+
+        return $obj;
     }
 }
