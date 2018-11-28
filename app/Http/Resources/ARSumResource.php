@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Receivable;
 use App\User;
 use App\ARType;
 use App\AReceivebill;
@@ -9,6 +10,7 @@ use App\AReceivable;
 use App\Refund;
 use App\ReceivablePlan;
 use App\EnumberateItem;
+use App\Department;
 use App\Http\Resources\ARDetailResource;
 use App\Http\Resources\RefoundResource;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -19,16 +21,13 @@ class ARSumResource extends JsonResource
         "一月","二月","三月","四月","五月","六月","七月","八月","九月","十月","十一月","十二月"
     ];
     
-    private $_receivable;
-    private $_receivebill;
+    private $receivable = 0;
+    private $allRece = 0;
+    private $receivableList = [];
+    private $receivebill = 0;
+    private $receivaebillList = [];
+    private $initAmount;
     private $_continueReceivable;//持续欠款月数
-    // private $_currentDate;//当前年
-
-    // public function __construct($resource,$date)
-    // {
-    //     parent::__construct($resource);
-    //     $this->_currentDate = $date;
-    // }
 
     /**
      * Transform the resource into an array.
@@ -39,7 +38,8 @@ class ARSumResource extends JsonResource
     public function toArray($request) 
     {
         return [
-            'status'        => $this->_GetItem($this->status),
+            'status'        => $this->status,
+            'status_name'   => $this->_GetItem($this->status),
             'name'          => $this->name ,
             'nameshow'      => $this->nameshow,
             'project'       => $this->project ,
@@ -57,8 +57,105 @@ class ARSumResource extends JsonResource
             'cust_id'       => $this->cid,
             'pid'           => $this->pid,
             'user_id'       => $this->user_id,  
-            'has_init'       => $this->_checkInit($this->pid),           
+            'has_init'      => $this->_checkInit($this->pid),
+            'department'    => $this->_department($this->user_id),
+            'init_data'     => $this->_getInit($this->pid, $this->year),
+            'monthly_sales' => $this->_calcSale($this->pid), //计算每月销量
+            'cooperation_amountfor'   => number_format($this->allRece),
         ];
+    }
+
+    /**计算期初
+     * 例：假如说要查询2018年的数据，那就得返回2018年之前的数据作为2018的期初
+     */
+    private function _getInit($pid, $year)
+    {
+        $receivable = AReceivable::where(['pid' => $pid])->selectRaw(" *, from_unixtime(date,'%Y') as `year`,from_unixtime(date,'%m') as `month` ")->get();
+        $receivebill = AReceivebill::where(['pid' => $pid])->selectRaw(" *, from_unixtime(date,'%Y') as `year`,from_unixtime(date,'%m') as `month` ")->get();
+
+        //统计当前年之前的数据
+        foreach ($receivable as $k => $v) {
+
+            if ($v->year < $year || $v->is_init == 1) {
+                $this->receivable += $v->amountfor;
+            }
+            else {
+                array_push($this->receivableList, $v);
+            }
+
+            $this->allRece += $v->amountfor;
+        }
+
+        foreach ($receivebill as $k => $v) {
+            if ($v->year < $year) {
+                $this->receivebill += $v->amountfor;
+            }
+            else {
+                array_push($this->receivaebillList, $v);
+            }
+        }
+
+        $this->initAmount = $this->receivable - $this->receivebill;
+
+        return $this->initAmount;
+    }
+    /**
+     * 每月销量
+     * @param $pid 项目id
+     * @return array  每月销量 => [[name => 一月, receivable => 111, receivebill => 22, arrears => 89]]
+     */
+    protected function _calcSale($pid)
+    {
+        $list = [];
+        //创建基础对象
+        foreach (self::MonthMap as $k => $v) {
+            $std = new \StdClass();
+            $std->name = $v;
+
+            if ($k == 0) {
+                $std->initAmount = $this->initAmount;
+            }
+            else {
+                $std->initAmount = 0;//期初
+            }
+
+            $std->amountfor = 0;//销售
+            $std->real_amountfor = 0;//收款
+            $std->arrears = 0;//欠款
+            array_push($list,$std);
+        }
+
+        //统计销售额
+        array_walk($this->receivableList, function($item) use (&$list) {
+            $index = $item->month - 1;
+            $list[$index]->amountfor = bcadd($item->amountfor, $list[$index]->amountfor, 2);
+        });
+
+        //统计回款额
+        array_walk($this->receivaebillList, function($item) use (&$list) {
+            $index = $item->month - 1;
+            $list[$index]->real_amountfor = bcadd($item->amountfor, $list[$index]->real_amountfor, 2);
+        });
+
+        $temp = $list;
+        //统计每月期初和期末欠款
+        array_walk($temp, function(&$item, $index) use (&$list) {
+            //期末欠款 = 期初 + 销售 - 收款
+            $arrears = bcsub(bcadd($item->initAmount, $item->amountfor, 2),$item->real_amountfor,2);
+            //格式化数字
+            $item->arrears = number_format($arrears);
+            $item->initAmount = number_format($item->initAmount);
+            $item->amountfor = number_format($item->amountfor);
+            $item->real_amountfor = number_format($item->real_amountfor);
+            $next = $index + 1;
+
+            if ($next < count($list)) {
+                //下月期初 = 本月期末
+                $list[$next]->initAmount =  $arrears;
+            }
+        });
+
+        return $list;
     }
 
     /**获取枚举类型的值**/
@@ -101,166 +198,21 @@ class ARSumResource extends JsonResource
         }
     }
 
-    /**
-     * Transform the resource into an array.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return array
-     */
-    public function toArray1($request)
+    protected function _department($user_id)
     {
+        if ($user_id) {
+            $user = User::find($user_id);
 
-        return [
-            'id'                => $this->id,
-            'pid'               => $this->pid,
-            'user_id'           => $this->user_id,
-            'cust_id'           => $this->cust_id,
-            'user_name'         => $this->user_name,
-            'name'              => $this->name,
-            'project'           => $this->project,
-            'amountfor'         => number_format($this->amountfor, 2),
-            'real_amountfor'    => number_format($this->real_amountfor, 2),
-            'discount'          => number_format($this->discount, 2),
-            'balance'           => number_format($this->balance, 2),
-            'receivable'        => $this->_buildData($this->pid, new AReceivable, $this->_receivable),
-            'receivebill'       => $this->_buildData($this->pid, new AReceivebill, $this->_receivebill),
-            'ar_sum'            => $this->_buildMonthSum($this->pid),
-            'refund_sum'        => $this->refund,
-            'refund'            => $this->_refund($this->pid),
-            'end_init'          => $this->_isInit($this->cust_id),
-            'agreement'         => $this->agreement,
-            'type'              => $this->type,
-            'tax'               => $this->tax,
-            'payment_days'      => $this->payment_days,
-            'continueReceivable'=> $this->_ReceMonth(),
-            'plan'              => $this->_GetPlan($this->pid),
-        ];
-    }
-    
-    /**
-    * 构建应收收款数据
-    * @param &$vars 引用传递
-    */
-    private function _buildData($pid, $model, &$vars)
-    {
-        $list = $model::where(['pid' => $pid])->orderBy('date', 'desc')->get();
-        $vars = $model::with(['type'])
-                        ->where(['pid' => $pid])
-                        ->selectRaw("*, from_unixtime(date,'%Y') as `year`,from_unixtime(date,'%m') as `month` ")
-                        ->orderBy('year','month')
-                        ->get();
-
-        return ARDetailResource::collection($list);
-    }
-
-    /**构建退款**/
-    private function _refund($pid)
-    {
-        $list = Refund::where(['pid' => $pid])->orderBy('date', 'desc')->get();
-
-        return RefoundResource::collection($list);
-    }
-
-    private function _ReceMonth()
-    {
-        return $this->_continueReceivable;
-    }
-
-    private function _buildMonthSum($pid)
-    {
-        $item = new \StdClass;
-        $this->_continueReceivable = 0;
-        // $ARType = ARType::all(); //业务类型
-        $m1 = $this->_receivebill->pluck('year')->toArray();
-        $m2 = $this->_receivable->pluck('year')->toArray();
-        $m3 =  array_unique(array_merge($m1, $m2));
-        sort($m3);
-
-        $lastYearEndAmount = 0; //上一年的期末
-        $currentYear = date('Y', time());
-        $currentMonth = date('m', time());
-
-        foreach ($m3 as $v) {
-            $m = [];
-
-            foreach (self::MonthMap as $mk => $mv) {
-                $month = new \StdClass;
-                $month->name = $mv;
-                $month->init_amountfor = 0;//本月期初应收
-                $month->amountfor = 0; //销售应收
-                $month->real_amountfor = 0; //收款
-                $month->end_amountfor = 0;//期末
-                array_push($m, $month);
-            } 
-
-            //应收
-            foreach ($this->_receivable as $rk => $rv) {
-                $index = intVal($rv->month) - 1;
-
-                if ($rv->year == $v) {
-
-                    if ($rv->is_init == 0) {
-                        $m[$index]->amountfor = bcadd($m[$index]->amountfor, $rv->amountfor, 3);
-                    } else {
-                        $m[$index]->init_amountfor = bcadd($m[$index]->init_amountfor, $rv->amountfor, 3); 
-                    }
-                }
+            if ($user->department_id) {
+                return Department::find($user->department_id)->name;
             }
 
-            //收款
-            foreach ($this->_receivebill as $lk => $lv) {
-                $index = intVal($lv->month) - 1;
-
-                if ($lv->year == $v) {
-                     
-                    $m[$index]->real_amountfor = bcadd($m[$index]->real_amountfor, $lv->amountfor, 3);
-
-                }
-            }
-
-            //开始计算
-            $lastMonthEndAmount = 0; //上月期末
-            
-
-            foreach ($m as $mk => $mv) {
-
-                //跨年期初 一月期初
-                if ($mk == 0) {
-                    $mv->init_amountfor = bcadd($mv->init_amountfor, $lastYearEndAmount, 3);
-                }
-                
-                //如果当前下个自然月的时间戳大于历史的时间戳 则可以输出数据
-                if (mktime(0,0,0,$mk+1,1,$v) < mktime(0,0,0,$currentMonth+1, 1, $currentYear)) {
-
-                    $mv->init_amountfor = bcadd($mv->init_amountfor, $lastMonthEndAmount, 3);//本月期初  = 上月余额
-
-                    $mv->end_amountfor = bcsub(bcadd($mv->init_amountfor, $mv->amountfor, 3), $mv->real_amountfor, 3);//期末欠款
-
-                    $lastMonthEndAmount = $mv->end_amountfor;//结存到下个月的期初
-
-                    //12月 年末余额
-                    if ($mk == count($m) - 1) {
-                        $lastYearEndAmount = $mv->end_amountfor;
-                    }
-                
-                    //连续欠款月数
-                    if ($mv->real_amountfor > 0) {
-
-                        $this->_continueReceivable = 0;
-
-                    } else {
-
-                        $this->_continueReceivable +=1;
-                    }
-                }
-            } 
-
-            $item->$v = $m;
         }
-
-        
-        return $item;
     }
+
+
+
+
 
     /**获取本周收款计划**/
     private function _GetPlan($pid)
@@ -274,12 +226,6 @@ class ARSumResource extends JsonResource
         return $plan;
     }
 
-    /**查询是否有期初**/
-    private function _isInit($cusid)
-    {
-        $list = AReceivable::where(['cust_id' => $cusid, 'is_init' => 1])->first();
 
-        return (bool)$list;
-    }
 
 }

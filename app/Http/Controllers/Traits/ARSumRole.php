@@ -8,7 +8,7 @@
  *
  */
 namespace App\Http\Controllers\Traits;
-
+use App\User;
 use App\Role;
 
 trait  ARSumRole {
@@ -21,7 +21,7 @@ trait  ARSumRole {
      */
     public function getRole($user_id)
     {
-        $roles = $this->user->find($user_id)->role;
+        $roles = User::find($user_id)->role;
 
         return $roles;
     }
@@ -31,9 +31,10 @@ trait  ARSumRole {
      * @param $roles Eloquent
      * @param  boolean
      */
-    public function checkRole($roles, Role $role)
+    public function checkRole($user_id)
     {
-        $list = $role->whereIn('id', $roles->pluck('id'))->with(['permissionAll'])->get();
+        $this->roles = $this->getRole($user_id);
+        $list = Role::whereIn('id', $this->roles->pluck('id'))->with(['permissionAll'])->get();
         $className = get_class($this);
         $backend = [];
         //获取当前类名

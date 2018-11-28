@@ -5,12 +5,11 @@ namespace App;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-
-class Refund extends Model
+class FilterProgram extends Model
 {
     use SoftDeletes;
-    //
+
     protected $fillable = [
-    	'id','pid','cust_id','refund','date','remark'
+        'id','name','module', 'conf','user_id'
     ];
 }

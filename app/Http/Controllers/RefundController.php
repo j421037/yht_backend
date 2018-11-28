@@ -33,10 +33,10 @@ class RefundController extends Controller
 
     private $hasRole;
 
-    public function __construct(User $user, Role $role)
+    public function __construct(User $user)
     {
         $this->user = $user;
-        $this->hasRole = $this->checkRole($this->getRole($this->getUser()->id), $role);
+        $this->hasRole = $this->checkRole($this->getUser()->id);
     }
 
     public function store(RefundStoreRequest $request)
@@ -60,7 +60,7 @@ class RefundController extends Controller
     {
         $model = Refund::find($request->id);
 
-        if ($model) {
+        if ($model && $this->hasRole) {
             $model->date    = strtotime($request->date);
             $model->refund  = $request->refund;
             $model->remark  = $request->remark;
@@ -97,7 +97,7 @@ class RefundController extends Controller
     {
         $this->_set('limit', $request->limit);
         $this->_set('offset', $request->offset);
-        $this->row = Refund::where(['pid' => $request->pid])->limit($this->limit)->offset($this->offset)->get();
+        $this->row = Refund::where(['pid' => $request->pid])->limit($this->limit)->offset($this->offset)->orderBy('date', 'desc')->get();
         $this->total = Refund::where(['pid' => $request->pid])->count();
 
         return response(['row' => RefoundResource::collection($this->row), 'total' => $this->total], 200);
@@ -108,9 +108,6 @@ class RefundController extends Controller
      */
     public function del(Request $request)
     {
-        if (!$this->hasRole) {
-            return response(['status' => 'error', 'errmsg' => '没有权限访问该资源']);
-        }
 
         try {
             if (Refund::destroy($request->id)) {

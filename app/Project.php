@@ -224,4 +224,9 @@ class Project extends Model
 
     	return $list;
     }
+
+    public function Customer()
+    {
+        return $this->hasOne('\App\RealCustomer', 'id', 'cust_id');
+    }
 }

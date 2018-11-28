@@ -4,7 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class ResetPassFormRequst extends FormRequest
+class FilterProgramStoreRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -24,8 +24,9 @@ class ResetPassFormRequst extends FormRequest
     public function rules()
     {
         return [
-            'passwd'      => 'required',
-            'checkpasswd' => 'required',
+            'name'      => 'required',
+            'module'    => 'required',
+            'conf'      => ""
         ];
     }
 }

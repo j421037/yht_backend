@@ -31,6 +31,10 @@ class Controller extends BaseController
     	return trim($item);
     }
 
+    /**
+     * 获取当前user
+     * @return $user
+     */
     protected  function getUser()
     {
         $user = JWTAuth::parseToken()->authenticate()->getAttributes();
@@ -41,5 +45,14 @@ class Controller extends BaseController
         }
 
         return $obj;
+    }
+
+    /**
+     * 获取当前用户id
+     * @return $user_id
+     */
+    protected  function getUserId()
+    {
+        return $this->getUser()->id;
     }
 }

@@ -141,6 +141,8 @@ Route::group(['middleware' => 'refresh.token'], function() {
     /**新增客户**/
     Route::post('realcustomer/store', 'RealCustomerController@store');
     Route::post('realcustomer/import', 'RealCustomerController@ImportFromExcel');
+    /**修改客户状态**/
+    Route::post('realcustomer/update/status', 'RealCustomerController@updateStatus');
     /**新增项目**/
     Route::post('project/store', 'ProjectController@store');
     /**查询项目**/
@@ -158,6 +160,7 @@ Route::group(['middleware' => 'refresh.token'], function() {
     Route::post('receivebill/store', 'ReceivebillController@store');
     Route::post('receivebill/all', 'ReceivebillController@all');
     Route::post('receivebill/update', 'ReceivebillController@update');
+    Route::post('receivebill/delete', 'ReceivebillController@del');
     /**退货单**/
     Route::post('refund/store','RefundController@store');
     Route::post('refund/all', 'RefundController@all');
@@ -169,8 +172,16 @@ Route::group(['middleware' => 'refresh.token'], function() {
     Route::post('arsum/role','ARSumController@role');
     Route::post('artype/store', 'ArTypeController@store');
     Route::post('artype/index', 'ArTypeController@index');
+    /**应收表头**/
+    Route::post('arsum/filter', 'ARSumFilterController@ARSumFilterTable');
+    Route::post('arsum/filter/query', 'ARSumFilterController@FieldQuery');
+    /**过滤方案**/
+    Route::post('arsum/filter/get/program', 'ARSumFilterController@PersonalFilterProgram');
     /**收款计划**/
     Route::post('ReceivablePlan/add', 'ReceivablePlanController@store');
+    Route::post('ReceivablePlan/all', 'ReceivablePlanController@all');
+    Route::post('ReceivablePlan/update', 'ReceivablePlanController@update');
+      Route::post('ReceivablePlan/delete', 'ReceivablePlanController@del');
     /**应收后台管理**/
     Route::post('arset/fieldtype', 'ARSetController@FieldType');
     Route::post('arset/fieldstore', 'ARSetController@StoreField');
@@ -196,6 +207,10 @@ Route::group(['middleware' => 'refresh.token'], function() {
     Route::any('ueditor/listimage', 'UEditorController@listImage');
     /***论坛基础***/
     Route::post('forumenu/get', 'ForumController@menu');
+    /**过滤方案**/
+    Route::post('arsum/filter/create/program', 'FilterProgramController@store');
+    Route::post('arsum/filter/update/program', 'FilterProgramController@updateName');
+    Route::post('arsum/filter/delete/program', 'FilterProgramController@del');
 });
 Route::group(['middleware' => 'jwt.refresh'], function(){
   Route::get('auth/refresh', 'AuthController@refresh');

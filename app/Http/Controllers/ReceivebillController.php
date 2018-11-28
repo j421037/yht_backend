@@ -5,6 +5,7 @@
 */
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Traits\ARSumRole;
 use Auth;
 use Event;
 use App\AReceivebill;
@@ -18,6 +19,8 @@ use App\Http\Resources\ReceivebillListResource;
 
 class ReceivebillController extends Controller
 {
+    use ARSumRole;
+
     public function store(ReceivebillRequest $request)
     {
     	$list = $request->all();
@@ -75,13 +78,25 @@ class ReceivebillController extends Controller
 
         try {
 
-            $list = AReceivebill::where(['pid' => $request->pid])->limit($limit)->offset($offset)->get();
+            $list = AReceivebill::where(['pid' => $request->pid])->limit($limit)->offset($offset)->orderBy('date', 'desc')->get();
             $total = AReceivebill::where(['pid' => $request->pid])->count();
 
             return response(['row' => ReceivebillListResource::collection($list),'total' => $total], 200);
         } 
         catch(QueryException $e) {
             return response(['status' => 'err', 'errmsg' => $e->getMessage()]);
+        }
+    }
+
+    public function del(Request $request)
+    {
+        try {
+            if (AReceivebill::destroy($request->id)) {
+                return response(['status' => 'success']);
+            }
+        }
+        catch (QueryException $e) {
+            return response(['status' => 'error', 'errmsg' => $e->getMessage()]);
         }
     }
 }

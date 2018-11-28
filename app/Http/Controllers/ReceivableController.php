@@ -9,15 +9,19 @@ use Auth;
 use Event;
 use App\AReceivable;
 use App\Events\ARLogEvent;
+use Illuminate\Auth\AuthenticationException;
 use Illuminate\Http\Request;
 use Illuminate\Database\QueryException;
 use App\Http\Requests\ReceivableEntryRequest;
 use App\Http\Requests\ReceUpdateRequest;
 use App\Http\Resources\ReceivableListResource;
+use App\Http\Controllers\Traits\ARSumRole;
+use App\Exceptions\UserAuthorizationException;
 
 class ReceivableController extends Controller
 {
-    
+    use ARSumRole;
+
     public function all(Request $request)
     {
         $limit = $request->limit ?? 5;
@@ -25,7 +29,7 @@ class ReceivableController extends Controller
 
         try {
 
-            $list = AReceivable::where(['pid' => $request->pid])->limit($limit)->offset($offset)->get();
+            $list = AReceivable::where(['pid' => $request->pid])->limit($limit)->offset($offset)->orderBy('date', 'desc')->get();
 
             $total = AReceivable::where(['pid' => $request->pid])->count();
 
@@ -89,8 +93,8 @@ class ReceivableController extends Controller
 
     public function delete(Request $request)
     {
-
         try {
+
             if (AReceivable::destroy($request->id)) {
                 return response(['status' => 'success']);
             }
@@ -98,5 +102,6 @@ class ReceivableController extends Controller
         catch (QueryException $e) {
             return response(['status' => 'error', 'errmsg' => $e->getMessage()]);
         }
-    } 
+
+    }
 }

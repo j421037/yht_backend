@@ -121,16 +121,16 @@ class AuthController extends Controller
 	public function resetPass(ResetPassFormRequst $request) 
 	{
 		
-		if ($request->password !== $request->checkpassword) {
+		if ($request->passwd !== $request->checkpasswd) {
 			return response(['status' => 'error', 'error' => '两次密码不一致'], 200);
 		}
 
 		try {
-			$hash = Hash::make(trim($request->password));
+			$hash = Hash::make(trim($request->passwd));
 			$user = User::find(Auth::user()->id)->update(['password' => $hash]);
 
 			if ($user) {
-				return response(['status' => 'success', 'hash' => $hash, 'password' => $request->password], 200);
+				return response(['status' => 'success'], 200);
 			}
 
 		} catch (QueryException $e) {

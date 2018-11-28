@@ -7,6 +7,7 @@ namespace App\Http\Controllers;
 
 use Auth;
 use Excel;
+use Illuminate\Database\QueryException;
 use Storage;
 use App\User;
 use App\RealCustomer;
@@ -202,5 +203,22 @@ class RealCustomerController extends Controller
         );
 
         return response()->download($file, '客户导入模板.xlsx', $headers);
+    }
+
+    /**更新客户状态**/
+    public function updateStatus(Request $request)
+    {
+        $realCustomer = RealCustomer::find($request->id);
+
+        try {
+            $realCustomer->status = $request->status;
+
+            if ($realCustomer->save()) {
+                return response(['status' => 'success']);
+            }
+        }
+        catch (QueryException $e) {
+            return response(['status' => 'error', 'errmsg' => $e->getMessage()]);
+        }
     }
 }
