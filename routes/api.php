@@ -177,6 +177,7 @@ Route::group(['middleware' => 'refresh.token'], function() {
     Route::post('arsum/filter/query', 'ARSumFilterController@FieldQuery');
     /**过滤方案**/
     Route::post('arsum/filter/get/program', 'ARSumFilterController@PersonalFilterProgram');
+
     /**收款计划**/
     Route::post('ReceivablePlan/add', 'ReceivablePlanController@store');
     Route::post('ReceivablePlan/all', 'ReceivablePlanController@all');
@@ -211,6 +212,7 @@ Route::group(['middleware' => 'refresh.token'], function() {
     Route::post('arsum/filter/create/program', 'FilterProgramController@store');
     Route::post('arsum/filter/update/program', 'FilterProgramController@updateName');
     Route::post('arsum/filter/delete/program', 'FilterProgramController@del');
+    Route::post('arsum/filter/update/config', 'FilterProgramController@updateConfig');
 });
 Route::group(['middleware' => 'jwt.refresh'], function(){
   Route::get('auth/refresh', 'AuthController@refresh');

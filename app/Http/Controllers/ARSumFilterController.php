@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\User;
 use App\Project;
 use App\BindAttr;
+use App\Enumberate;
 use App\EnumberateItem;
 use App\Department;
 use App\RealCustomer;
@@ -15,26 +16,7 @@ use App\Http\Resources\ARSumFilterQueryResource;
 
 class ARSumFilterController extends Controller
 {
-    protected $operator = array(
-        ["label" => '等于', "value" => 0],
-        ["label" => '不等于',"value" => 1],
-        ["label" => '大于',"value" => 2],
-        ["label" => '大于等于',"value" => 3],
-        ["label" => '小于',"value" => 4],
-        ["label" => '小于等于',"value" => 5],
-        ["label" => '为空',"value" => 6],
-        ["label" => '不为空',"value" => 7],
-        ["label" => '包含', "value"   => 8],
-        ["label" => "不包含", "value" => 9]
-    );
 
-    protected $operatorMap = array(
-        '=', '<>','>','>=','<','<=', "is null", "is not null", "like", "not like"
-    );
-
-    protected $logic = array(['label' => "并且", 'value' => 1],['label' => '或者', 'value' => 2]);
-
-    protected $logicMap = array('AND', 'OR');
 
     /**应收表头过滤基础信息
      * @return [label => 显示名称, value => 对应的标识名, type=>字段类型];
@@ -107,7 +89,7 @@ class ARSumFilterController extends Controller
             array(
                 'label' => '项目标签',
                 'value' => 'protag',
-                'type'  => 'enumberate',
+                'type'  => 'enumerate',
                 'list'  => ARSumFilterQueryResource::collection($this->GetEnumberItem('F_CMK_CUSTAG'))
             ),
             array(
@@ -146,7 +128,7 @@ class ARSumFilterController extends Controller
      */
     protected function GetEnumberItem($AttrKey)
     {
-        return EnumberateItem::where(['eid' => BindAttr::where(['key' => $AttrKey])->first()->id])->get();
+        return EnumberateItem::where(['eid' => Enumberate::where(['id' => BindAttr::where(['key' => $AttrKey])->first()->eid])->first()->id])->get();
     }
 
     /**返回过滤方案
@@ -159,11 +141,39 @@ class ARSumFilterController extends Controller
         $program = FilterProgram::where(['user_id' => $this->getUserId()])->get();
 
         foreach($program as $v) {
-            $v->conf = json_decode($v->conf, true);
+            $confList = json_decode($v->conf, true);
+            $field = $this->field();
+            //实现取值
+            if (is_array($confList)) {
+                array_walk($confList, function (&$item) use ($field) {
+
+                    if ($item['type']['name'] == 'enumerate') {
+
+                        foreach ($field as $ik => $iv) {
+                            if ($iv['value'] == $item['field']) {
+                                $item['type']['list'] = $iv['list'];
+                            }
+                        }
+                    }
+
+                    if ($item['type']['name'] == 'server') {
+
+                        if ($item['field'] == 'cust_id' && !Empty($item['value'])) {
+                            $item['remote'] = ARSumFilterQueryResource::collection(RealCustomer::where(['id' => $item['value']])->get());
+                        }
+
+                        if ($item['field'] == 'pid' && !Empty($item['value'])) {
+                            $item['remote'] = ARSumFilterQueryResource::collection(Project::where(['id' => $item['value']])->get());
+                        }
+                    }
+                });
+            }
+
+            $v->conf = $confList;
         }
 
         if ($flag) {
-            return $program;
+            return FilterProgramResource::collection($program);
         }
 
         return response( FilterProgramResource::collection($program), 200);

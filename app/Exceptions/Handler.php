@@ -70,8 +70,20 @@ class Handler extends ExceptionHandler
      * @return \Illuminate\Http\JsonResponse
      */
     protected function invalidJson($request, ValidationException $exception)
-    {   
-        $err = ['error' => $exception,'aa'=>'bb'];
+    {
+        if ($exception->validator->customMessages) {
+            $errmsg = "";
+
+            foreach ($exception->validator->customMessages as $k => $v) {
+                $errmsg = $v;
+                break;
+            }
+        }
+        else {
+            $errmsg = $exception->getMessage();
+        }
+
+        $err = ['status' => 'error', 'errmsg'=> $errmsg];
 
         return response()->json($err, 200);
     }

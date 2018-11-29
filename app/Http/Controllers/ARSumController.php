@@ -14,22 +14,225 @@ use App\RealCustomer;
 use App\AReceivebill;
 use App\AReceivable;
 use App\Project;
+use App\FilterProgram;
 use Illuminate\Http\Request;
 use App\Http\Resources\ARSumResource;
 use App\Http\Resources\ARSumRoleResource;
+use Illuminate\Support\Facades\DB;
 
 class ARSumController extends Controller
 {
 
+    public function query(Request $request)
+    {
+        //第一次请求
+        if ($request->initialization == true ) {
+            $filter = FilterProgram::where(['default' => 1, 'user_id' => $this->getUserId()])->first();
+
+            if ($filter) {
+                if ($filter->conf) {
+                    $filter = (object)json_decode($filter->conf, true);
+                }
+            }
+        }
+        //
+        else {
+            $filter = (object) $request->conf;
+        }
+
+        $AuthList = $this->AuthIdList();
+
+        $model = RealCustomer::with(['project' => function($query) use ($filter,$AuthList) {
+            $query->whereIn('user_id', $AuthList);
+
+            if ($filter) {
+
+                foreach ($filter as $k => $v) {
+                    $v = (object) $v;
+                    //过滤项目
+                    if ($v->field == 'pid' && !Empty($v->value)) {
+                        switch ($v->operator) {
+                            case 0:
+                                //等于
+                                $query->where(['id' => $v->value]);
+                                break;
+                            case 1:
+                                //不等
+                                $query->where('id', '!=', $v->value);
+                                break;
+                            default:
+                                $query->where(['id' => $v->value]);
+                        }
+                    }
+
+                    //过滤业务员
+                    //非管理只能查询自己的
+                    if ($v->field == 'user_id' && !Empty($v->value)) {
+                        if ($AuthList->contains($v->value)) {
+                            switch ($v->operator) {
+                                case 0:
+                                    //等于
+                                    $query->where(['user_id' => $v->value]);
+                                    break;
+                                case 1:
+                                    //不等
+                                    $query->where('user_id', '!=', $v->value);
+                                    break;
+                                default:
+                                    $query->where(['user_id' => $v->value]);
+                            }
+                        }
+                    }
+                }
+            }
+
+
+        }]);
+
+
+        if ($filter) {
+
+            foreach ($filter as $k => $v) {
+                $v = (object) $v;
+                //过滤客户
+                if ($v->field == 'cust_id' && !Empty($v->value)) {
+                    switch ($v->operator) {
+                        case 0 :
+                            //客户等于
+                            $model->where(['id' => $v->value]);
+                            break;
+                        case 1 :
+                            //客户不等于
+                            $model->where('id', '!=', $v->value);
+                            break;
+                        default:
+                            $model->where(['id' => $v->value]);
+                    }
+                }
+                //过滤状态
+                if ($v->field == 'status' && !Empty($v->value)) {
+                    switch ($v->operator) {
+                        case 0:
+                            //客户状态等于
+                            $model->where(['status' => $v->value]);
+                            break;
+                        case 0:
+                            //客户状态不等于
+                            $model->where('status', '!=', $v->value);
+                            break;
+                        default:
+                            //默认状态
+                            $model->where(['status' => $v->value]);
+                            break;
+                    }
+
+                }
+
+            }
+        }
+
+
+        $list = $model->orderBy('id', 'desc')->get();
+        $year = date('Y', time());
+        $index = 1;
+        $cid = null;
+        $data = [];
+
+        foreach ($list as $k => $v) {
+            $first = true;
+
+            foreach ($v->project as $pk => $pv) {
+                $projectName = $pv->name;
+
+                $item = (object) $pv;
+                $item->status = $v->status;
+                $item->index = $index;
+                $item->name = $v->name;
+                $item->cid = $v->id;
+                $item->year = $year;
+                $item->project = $projectName;
+                $item->pid = $pv->id;
+                //如果是第一行 显示客户名字
+                if ($first) {
+                    $item->nameshow = true;
+                    $first = false;
+                }
+                else {
+                    $item->nameshow = false;
+                }
+
+                ++$index;
+                array_push($data, $item);
+            }
+        }
+
+        $data = collect($data);
+
+        return response(['data' => ARSumResource::collection($data)], 200);
+
+    }
     /**
      * 返回客户+项目信息
      * 默认情况下，个人返回自己创建的项目，部门经理、助理返回当前部门的项目； boss 返回全部的项目信息
      */
-    public function query(Request $request)
+    public function query0(Request $request)
     {
+        //获取默认过滤方案
+        $filter = FilterProgram::where(['default' => 1, 'user_id' => $this->getUserId()])->first();
+        $model = Project::with(['Customer' ])->whereIn('user_id', $this->AuthIdList());
+
+        if ($filter) {
+            $filter = (object) json_decode($filter->conf, true);
+
+            foreach ($filter as $k => $v) {
+                $v = (object) $v;
+
+                //过滤项目
+                if ($v->field == 'pid' && !Empty($v->value)) {
+
+                    switch ($v->operator) {
+                        case 0 :
+                            //项目等于
+                            $model->where(['id' => $v->value]);
+                            break;
+                        case 1 :
+                            //项目不等于
+                            $model->where('id', '!=', $v->value);
+                            break;
+                        default:
+                            $model->where(['id' => $v->value]);
+                    }
+                }
+
+                //过滤客户
+                if ($v->field == 'cust_id' && !Empty($v->value)) {
+                    switch ($v->operator) {
+                        case 0 :
+                            //项目等于
+                            $model->where(['cust_id' => $v->value]);
+                            break;
+                        case 1 :
+                            //项目不等于
+                            $model->where('cust_id', '!=', $v->value);
+                            break;
+                        default:
+                            $model->where(['cust_id' => $v->value]);
+                    }
+                }
+
+                //过滤标签
+                if ($v->field == 'cust_id' && !Empty($v->value)) {
+
+                }
+
+            }
+        }
+
+        $projects = $model->orderBy('cust_id')->get();
+        return $projects;
         //获取当前用户的所有项目
         $filter = $request;
-        $projects = Project::with(['Customer'])->whereIn('user_id', $this->AuthIdList())->orderBy('cust_id')->get();
+//        $projects = Project::with(['Customer'])->whereIn('user_id', $this->AuthIdList())->orderBy('cust_id')->get();
         $index = 1;
         $cid= null;
 
@@ -55,7 +258,7 @@ class ARSumController extends Controller
             $cid = $v->cust_id;
             ++$index;
         }
-
+        return $projects;
         return response(['data' => ARSumResource::collection($projects)], 200);
     }
 
