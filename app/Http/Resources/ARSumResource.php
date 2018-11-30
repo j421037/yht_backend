@@ -45,7 +45,7 @@ class ARSumResource extends JsonResource
             'project'       => $this->project ,
             'index'         => $this->index ,
             'user_name'     => $this->_userName($this->user_id) ,
-            'tag'           => $this->tag ,
+            'tag'           => $this->_GetItem($this->tag) ,
             'tax'           => $this->tax ,
             'payment_days'  => $this->payment_days,  
             'estimate'      => $this->estimate , //预估

@@ -7,17 +7,20 @@ namespace App\Http\Controllers;
 
 use Auth;
 use Excel;
-use Illuminate\Database\QueryException;
 use Storage;
 use App\User;
 use App\RealCustomer;
 use App\PotentialCustomer;
 use App\Project;
 use App\AReceivable;
+use App\BindAttr;
+use App\Enumberate;
+use App\EnumberateItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\ARSumController;
 use App\Http\Requests\RealCustomerAddRequest;
+use Illuminate\Database\QueryException;
 use App\Http\Resources\RealCustomerQueryResource;
 
 class RealCustomerController extends Controller 
@@ -34,7 +37,8 @@ class RealCustomerController extends Controller
         'date',
         'affiliate',
         'tag',
-        'estimate'
+        'estimate',
+        'phone_num'
     ];
     /**新建客户**/
     public function store(RealCustomerAddRequest $request)
@@ -75,7 +79,14 @@ class RealCustomerController extends Controller
 
     	if ($request->keyword != '') {
 
-            $list = RealCustomer::where('name','like','%'.trim($request->keyword).'%')->get();
+    	    if ($request->type == 'cooperate') {
+    	        $model = new RealCustomer;
+            }
+            else {
+                $model = new PotentialCustomer;
+            }
+
+            $list = $model->where('name','like','%'.trim($request->keyword).'%')->get();
 	    	$list = RealCustomerQueryResource::collection($list);
 	    }
 
@@ -99,11 +110,12 @@ class RealCustomerController extends Controller
         //sheet1中存放合作客户的内容
         $data = Excel::selectSheetsByIndex(1)->load($realpath, 'UTF-8')->get($this->excelParam);
         //sheet2中存放潜在目标客户的内容
-        
-        return $data;
+
         $fail = [];
         $success = 0;
-       
+        $statusItemId = $this->GetEnumberItem('F_CMK_CUSTATUS');
+        $tid = $this->GetEnumberItem('F_CMK_PROATTR');
+
         foreach ($data as $k => $v) {
 
             if (!$v->name || !$v->project ||!$v->user || strtotime($v->date) < 1) 
@@ -114,7 +126,7 @@ class RealCustomerController extends Controller
             if (!$user) 
                 continue;
 
-            $cusItem = ['name' => trim($v->name), 'user_id' => $user->id];
+            $cusItem = ['name' => trim($v->name), 'user_id' => $user->id, 'status' => $statusItemId];
             $proItem = [
                 'name'          => trim($v->project), 
                 'user_id'       => $user->id,
@@ -122,6 +134,11 @@ class RealCustomerController extends Controller
                 'type'          => trim($v->type),
                 'tax'           => trim($v->tax),
                 'agreement'     => trim($v->agreement),
+                'tid'           => $tid,
+                'tag'           => $this->GetEnumberItemFormName($v->tag),
+                'affiliate'     => trim($v->affiliate),//挂靠信息
+                'estimate'      => trim($v->estimate), //预计金额
+                'phone_num'     => trim($v->phone_num), //联系电话
             ];
             $receivable = [
                 'init_amountfor' => trim($v->init) ?? 0,
@@ -151,9 +168,7 @@ class RealCustomerController extends Controller
     * @param $proItem 项目列表 
     */
     protected function _batchStore($cusItem, $proItem, $receItem) 
-    {   
-
-
+    {
         DB::beginTransaction();
 
         try {
@@ -186,7 +201,17 @@ class RealCustomerController extends Controller
             return false;
         } 
     }
-
+    /**返回绑定属性信息
+     * @param $AttrName 属性名称
+     */
+    protected function GetEnumberItem($AttrKey)
+    {
+        return EnumberateItem::where(['eid' => Enumberate::where(['id' => BindAttr::where(['key' => $AttrKey])->first()->eid])->first()->id])->first()->id;
+    }
+    protected function GetEnumberItemFormName($name)
+    {
+        return EnumberateItem::where(['name' => $name])->first()->id;
+    }
      /**下载模板**/
     public function downloadTemp(Request $request)
     {

@@ -46,7 +46,6 @@ class ARSumController extends Controller
             $query->whereIn('user_id', $AuthList);
 
             if ($filter) {
-
                 foreach ($filter as $k => $v) {
                     $v = (object) $v;
                     //过滤项目
@@ -64,7 +63,6 @@ class ARSumController extends Controller
                                 $query->where(['id' => $v->value]);
                         }
                     }
-
                     //过滤业务员
                     //非管理只能查询自己的
                     if ($v->field == 'user_id' && !Empty($v->value)) {
@@ -83,12 +81,86 @@ class ARSumController extends Controller
                             }
                         }
                     }
+                    //过滤施工范围
+                    if ($v->field == 'build' && !Empty($v->value)) {
+                        switch ($v->operator) {
+                            //等于
+                            case 0:
+                                //等于
+                                $query->where(['tid' => $v->value]);
+                                break;
+                            case 1:
+                                //不等
+                                $query->where('tid', '!=', $v->value);
+                                break;
+                            default:
+                                $query->where(['tid' => $v->value]);
+                        }
+                    }
+                    //过滤税率
+                    if ($v->field == 'tax' && !Empty($v->value)) {
+                        switch ($v->operator) {
+                            //等于
+                            case 0:
+                                //等于
+                                $query->where(['tax' => $v->value]);
+                                break;
+                            case 1:
+                                //不等
+                                $query->where('tax', '!=', $v->value);
+                                break;
+                            case 2:
+                                //大于
+                                $query->where('tax', '>', $v->value);
+                            default:
+                                $query->where(['tid' => $v->value]);
+                        }
+                    }
+                    //过滤项目类型
+                    if ($v->field == 'protag' && !Empty($v->value)) {
+                        switch ($v->operator) {
+                            //等于
+                            case 0:
+                                //等于
+                                $query->where(['tag' => $v->value]);
+                                break;
+                            case 1:
+                                //不等
+                                $query->where('tag', '!=', $v->value);
+                                break;
+
+                            default:
+                                $query->where(['tag' => $v->value]);
+                        }
+                    }
+                    //过滤是否有挂靠
+                    if ($v->field == 'affiliate' && !Empty($v->value)) {
+                        switch ($v->operator) {
+                            //等于
+                            case 0:
+                                //无挂靠
+                                if($v->value == 0) {
+                                    $query->where('affiliate' ,'=', null);
+                                }
+                                //有挂靠
+                                else {
+                                    $query->where('affiliate', '!=', null);
+                                }
+
+                                break;
+                            default:
+                                if($v->value == 0) {
+                                    $query->where('affiliate' ,'=', null);
+                                }
+                                //有挂靠
+                                else {
+                                    $query->where('affiliate', '!=', null);
+                                }
+                        }
+                    }
                 }
             }
-
-
         }]);
-
 
         if ($filter) {
 
@@ -125,12 +197,9 @@ class ARSumController extends Controller
                             $model->where(['status' => $v->value]);
                             break;
                     }
-
                 }
-
             }
         }
-
 
         $list = $model->orderBy('id', 'desc')->get();
         $year = date('Y', time());
