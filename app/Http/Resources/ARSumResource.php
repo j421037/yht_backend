@@ -44,7 +44,7 @@ class ARSumResource extends JsonResource
             'nameshow'      => $this->nameshow,
             'project'       => $this->project ,
             'index'         => $this->index ,
-            'user_name'     => $this->_userName($this->user_id) ,
+            'user_name'     => $this->_userName($this->user_id, $this->cuid) ,
             'tag'           => $this->_GetItem($this->tag) ,
             'tax'           => $this->tax ,
             'payment_days'  => $this->payment_days,  
@@ -62,6 +62,7 @@ class ARSumResource extends JsonResource
             'init_data'     => $this->_getInit($this->pid, $this->year),
             'monthly_sales' => $this->_calcSale($this->pid), //计算每月销量
             'cooperation_amountfor'   => number_format($this->allRece),
+            'projectshow'   => $this->projectshow
         ];
     }
 
@@ -191,11 +192,15 @@ class ARSumResource extends JsonResource
     }
 
     /**用户名**/
-    protected function _userName($id)
+    protected function _userName($id, $cuid)
     {
-        if ($id) {
-            return User::find($id)->name;
+        $userid = $id;
+
+        if (!$userid) {
+            $userid = $cuid;
         }
+
+        return User::find($userid)->name;
     }
 
     protected function _department($user_id)
@@ -221,9 +226,10 @@ class ARSumResource extends JsonResource
 
         if ($plan) {
             $plan->date = date('Y年m月d日',strtotime($plan->date));
+            return $plan;
         }
 
-        return $plan;
+
     }
 
 

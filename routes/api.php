@@ -141,6 +141,7 @@ Route::group(['middleware' => 'refresh.token'], function() {
     /**新增客户**/
     Route::post('realcustomer/store', 'RealCustomerController@store');
     Route::post('realcustomer/import', 'RealCustomerController@ImportFromExcel');
+    Route::post('realcustomer/test', 'RealCustomerController@Test');
     /**修改客户状态**/
     Route::post('realcustomer/update/status', 'RealCustomerController@updateStatus');
     /**新增项目**/
@@ -177,7 +178,9 @@ Route::group(['middleware' => 'refresh.token'], function() {
     Route::post('arsum/filter/query', 'ARSumFilterController@FieldQuery');
     /**过滤方案**/
     Route::post('arsum/filter/get/program', 'ARSumFilterController@PersonalFilterProgram');
-
+    //潜在客户
+    Route::post('potentialCustomer/all', 'PotentialCustomerController@all');
+    Route::post('potentialProject/store', 'PotentialProjectController@store');
     /**收款计划**/
     Route::post('ReceivablePlan/add', 'ReceivablePlanController@store');
     Route::post('ReceivablePlan/all', 'ReceivablePlanController@all');
@@ -195,6 +198,8 @@ Route::group(['middleware' => 'refresh.token'], function() {
     Route::post('bindattr/all', 'BindAttrController@list');
     
     Route::post('bindattr/update', 'BindAttrController@update');
+    /**调试初始化应收数据**/
+    Route::post('arsum/initialization', 'ARSumController@initialization');
   });
     /**不需要验证权限**/
   Route::post('bindattr/one', 'BindAttrController@one');

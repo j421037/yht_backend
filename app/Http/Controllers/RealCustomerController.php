@@ -117,8 +117,7 @@ class RealCustomerController extends Controller
         $tid = $this->GetEnumberItem('F_CMK_PROATTR');
 
         foreach ($data as $k => $v) {
-
-            if (!$v->name || !$v->project ||!$v->user || strtotime($v->date) < 1) 
+            if (!$v->name || !$v->user || strtotime($v->date) < 1)
                 continue;
 
             $user = User::where(['name' => trim($v->user)])->first();
@@ -127,19 +126,23 @@ class RealCustomerController extends Controller
                 continue;
 
             $cusItem = ['name' => trim($v->name), 'user_id' => $user->id, 'status' => $statusItemId];
-            $proItem = [
-                'name'          => trim($v->project), 
-                'user_id'       => $user->id,
-                'payment_days'  => trim($v->payment_days),
-                'type'          => trim($v->type),
-                'tax'           => trim($v->tax),
-                'agreement'     => trim($v->agreement),
-                'tid'           => $tid,
-                'tag'           => $this->GetEnumberItemFormName($v->tag),
-                'affiliate'     => trim($v->affiliate),//挂靠信息
-                'estimate'      => trim($v->estimate), //预计金额
-                'phone_num'     => trim($v->phone_num), //联系电话
-            ];
+            $proItem = [];
+
+            if ($v->project) {
+                $proItem = [
+                    'name' => trim($v->project),
+                    'user_id' => $user->id,
+                    'payment_days' => trim($v->payment_days),
+                    'type' => trim($v->type),
+                    'tax' => trim($v->tax),
+                    'agreement' => trim($v->agreement),
+                    'tid' => $tid,
+                    'tag' => $this->GetEnumberItemFormName($v->tag),
+                    'affiliate' => trim($v->affiliate),//挂靠信息
+                    'estimate' => trim($v->estimate), //预计金额
+                    'phone_num' => trim($v->phone_num), //联系电话
+                ];
+            }
             $receivable = [
                 'init_amountfor' => trim($v->init) ?? 0,
                 'is_init' => 1,
@@ -170,33 +173,33 @@ class RealCustomerController extends Controller
     protected function _batchStore($cusItem, $proItem, $receItem) 
     {
         DB::beginTransaction();
-
         try {
-
             if ($result = RealCustomer::firstOrCreate($cusItem)) {
+                $rece = [
+                    'cust_id'   => $result->id,
+                    'amountfor' => $receItem['init_amountfor'],
+                    'is_init'   => 1,
+                    'date'      => strtotime($receItem['date']),
+                    'remark'    => $receItem['remark'],
+                    'pid'       => 0
+                ];
 
-                $proItem['cust_id'] = $result->id;
+                if (count($proItem) > 0) {
+                    $proItem['cust_id'] = $result->id;
+                    $project = Project::create($proItem);
+                    $rece['pid'] = $project->id;
+                }
 
-                if ($project = Project::create($proItem)) {
-
-                    $rece = [
-                        'pid'       => $project->id, 
-                        'cust_id'   => $result->id, 
-                        'amountfor' => $receItem['init_amountfor'], 
-                        'is_init'   => 1,
-                        'date'      => strtotime($receItem['date']),
-                        'remark'    => $receItem['remark']
-                    ];
-
-                    if (AReceivable::create($rece)) {
-                        DB::commit();
-                        return true;
-                    }                     
-                } else {
-                    return false;
+                if (AReceivable::create($rece)) {
+                    DB::commit();
+                    return true;
                 }
             }
-        } catch (\Illuminate\Database\QueryException $e) {
+            else {
+                return false;
+            }
+        }
+        catch (\Illuminate\Database\QueryException $e) {
             DB::rollback();
             return false;
         } 
@@ -245,5 +248,25 @@ class RealCustomerController extends Controller
         catch (QueryException $e) {
             return response(['status' => 'error', 'errmsg' => $e->getMessage()]);
         }
+    }
+
+
+    public function Test(Request $request)
+    {
+        if (empty($request->file)) {
+            return;
+        }
+
+        $userid = Auth::user()->id;
+        $file = Storage::disk('local')->putFile('file/' . date('Y-m-d', time()), $request->file);
+
+        $realpath = storage_path('app/' . $file);
+
+        //$realpath = storage_path('app/template/template.xlsx');
+
+        //sheet1中存放合作客户的内容
+        $data = Excel::selectSheetsByIndex(1)->load($realpath, 'UTF-8')->get(['name']);
+
+        return count($data);
     }
 }

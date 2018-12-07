@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use JWTAuth;
+use App\User;
+use App\Department;
 use Illuminate\Foundation\Bus\DispatchesJobs;
 use Illuminate\Routing\Controller as BaseController;
 use Illuminate\Foundation\Validation\ValidatesRequests;
@@ -73,5 +75,25 @@ class Controller extends BaseController
     protected  function getUserId()
     {
         return $this->getUser()->id;
+    }
+
+    /**
+     * 1、部门经理、助理 返回当前部门下所有用户的id
+     */
+    public function AuthIdList()
+    {
+        $user = User::find($this->getUserId());
+        //获取用户的角色
+        $userRoleName = User::find($user->id)->role->pluck('name');
+
+        if ($userRoleName->contains("超级管理员")) {
+            return User::all()->pluck('id');
+        }
+        else if (Department::where(['user_id' => $this->getUserId()])->first() || $userRoleName->contains("部门助理")) {
+            return User::where(['department_id' => $user->department_id])->get()->pluck('id');
+        }
+        else {
+            return collect($user->id);
+        }
     }
 }

@@ -22,7 +22,7 @@ class RealCustomer extends Model
 
     public function project()
     {
-    	return $this->hasMany('App\Project','cust_id');
+    	return $this->hasMany('App\Project','cust_id',"id");
     			
     }
 

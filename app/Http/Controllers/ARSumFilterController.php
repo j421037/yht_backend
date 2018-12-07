@@ -87,7 +87,7 @@ class ARSumFilterController extends Controller
                 'list'  => ARSumFilterQueryResource::collection($this->GetEnumberItem('F_CMK_PROATTR'))
             ),
             array(
-                'label' => '项目标签',
+                'label' => '标签',
                 'value' => 'protag',
                 'type'  => 'enumerate',
                 'list'  => ARSumFilterQueryResource::collection($this->GetEnumberItem('F_CMK_CUSTAG'))

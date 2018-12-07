@@ -15,6 +15,7 @@ use App\AReceivebill;
 use App\AReceivable;
 use App\Project;
 use App\FilterProgram;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use App\Http\Resources\ARSumResource;
 use App\Http\Resources\ARSumRoleResource;
@@ -22,313 +23,60 @@ use Illuminate\Support\Facades\DB;
 
 class ARSumController extends Controller
 {
-
+    /**
+     * 返回客户+项目信息
+     * 默认情况下，个人返回自己创建的项目，部门经理、助理返回当前部门的项目； boss 返回全部的项目信息
+     */
     public function query(Request $request)
     {
+       // DB::enableQueryLog();
         //第一次请求
-        if ($request->initialization == true ) {
-            $filter = FilterProgram::where(['default' => 1, 'user_id' => $this->getUserId()])->first();
+        $filter = FilterProgram::where(['default' => 1, 'user_id' => $this->getUserId()])->first();
 
-            if ($filter) {
-                if ($filter->conf) {
-                    $filter = (object)json_decode($filter->conf, true);
-                }
-            }
+        if ($request->initialization == true && isset($filter->conf) ) {
+            $filter = (object)json_decode($filter->conf, true);
         }
-        //
+        //多次请求
         else {
             $filter = (object) $request->conf;
         }
 
         $AuthList = $this->AuthIdList();
-
-        $model = RealCustomer::with(['project' => function($query) use ($filter,$AuthList) {
-            $query->whereIn('user_id', $AuthList);
-
-            if ($filter) {
-                foreach ($filter as $k => $v) {
-                    $v = (object) $v;
-                    //过滤项目
-                    if ($v->field == 'pid' && !Empty($v->value)) {
-                        switch ($v->operator) {
-                            case 0:
-                                //等于
-                                $query->where(['id' => $v->value]);
-                                break;
-                            case 1:
-                                //不等
-                                $query->where('id', '!=', $v->value);
-                                break;
-                            default:
-                                $query->where(['id' => $v->value]);
-                        }
-                    }
-                    //过滤业务员
-                    //非管理只能查询自己的
-                    if ($v->field == 'user_id' && !Empty($v->value)) {
-                        if ($AuthList->contains($v->value)) {
-                            switch ($v->operator) {
-                                case 0:
-                                    //等于
-                                    $query->where(['user_id' => $v->value]);
-                                    break;
-                                case 1:
-                                    //不等
-                                    $query->where('user_id', '!=', $v->value);
-                                    break;
-                                default:
-                                    $query->where(['user_id' => $v->value]);
-                            }
-                        }
-                    }
-                    //过滤施工范围
-                    if ($v->field == 'build' && !Empty($v->value)) {
-                        switch ($v->operator) {
-                            //等于
-                            case 0:
-                                //等于
-                                $query->where(['tid' => $v->value]);
-                                break;
-                            case 1:
-                                //不等
-                                $query->where('tid', '!=', $v->value);
-                                break;
-                            default:
-                                $query->where(['tid' => $v->value]);
-                        }
-                    }
-                    //过滤税率
-                    if ($v->field == 'tax' && !Empty($v->value)) {
-                        switch ($v->operator) {
-                            //等于
-                            case 0:
-                                //等于
-                                $query->where(['tax' => $v->value]);
-                                break;
-                            case 1:
-                                //不等
-                                $query->where('tax', '!=', $v->value);
-                                break;
-                            case 2:
-                                //大于
-                                $query->where('tax', '>', $v->value);
-                            default:
-                                $query->where(['tid' => $v->value]);
-                        }
-                    }
-                    //过滤项目类型
-                    if ($v->field == 'protag' && !Empty($v->value)) {
-                        switch ($v->operator) {
-                            //等于
-                            case 0:
-                                //等于
-                                $query->where(['tag' => $v->value]);
-                                break;
-                            case 1:
-                                //不等
-                                $query->where('tag', '!=', $v->value);
-                                break;
-
-                            default:
-                                $query->where(['tag' => $v->value]);
-                        }
-                    }
-                    //过滤是否有挂靠
-                    if ($v->field == 'affiliate' && !Empty($v->value)) {
-                        switch ($v->operator) {
-                            //等于
-                            case 0:
-                                //无挂靠
-                                if($v->value == 0) {
-                                    $query->where('affiliate' ,'=', null);
-                                }
-                                //有挂靠
-                                else {
-                                    $query->where('affiliate', '!=', null);
-                                }
-
-                                break;
-                            default:
-                                if($v->value == 0) {
-                                    $query->where('affiliate' ,'=', null);
-                                }
-                                //有挂靠
-                                else {
-                                    $query->where('affiliate', '!=', null);
-                                }
-                        }
-                    }
-                }
-            }
-        }]);
-
-        if ($filter) {
-
-            foreach ($filter as $k => $v) {
-                $v = (object) $v;
-                //过滤客户
-                if ($v->field == 'cust_id' && !Empty($v->value)) {
-                    switch ($v->operator) {
-                        case 0 :
-                            //客户等于
-                            $model->where(['id' => $v->value]);
-                            break;
-                        case 1 :
-                            //客户不等于
-                            $model->where('id', '!=', $v->value);
-                            break;
-                        default:
-                            $model->where(['id' => $v->value]);
-                    }
-                }
-                //过滤状态
-                if ($v->field == 'status' && !Empty($v->value)) {
-                    switch ($v->operator) {
-                        case 0:
-                            //客户状态等于
-                            $model->where(['status' => $v->value]);
-                            break;
-                        case 0:
-                            //客户状态不等于
-                            $model->where('status', '!=', $v->value);
-                            break;
-                        default:
-                            //默认状态
-                            $model->where(['status' => $v->value]);
-                            break;
-                    }
-                }
-            }
-        }
-
-        $list = $model->orderBy('id', 'desc')->get();
+        $model = new Project();
+        $result = $model->ARSum($filter, $AuthList, $request->offset, $request->limit);
+        $count = $result['total'];
+        $data = $result['row'];
         $year = date('Y', time());
-        $index = 1;
-        $cid = null;
-        $data = [];
+        $currentCid = 0;
+        $project = 0;
+        $tid = 0;
 
-        foreach ($list as $k => $v) {
-            $first = true;
+        array_walk($data, function(&$item, $index) use (&$currentCid, &$project, &$tid, $year) {
 
-            foreach ($v->project as $pk => $pv) {
-                $projectName = $pv->name;
-
-                $item = (object) $pv;
-                $item->status = $v->status;
-                $item->index = $index;
-                $item->name = $v->name;
-                $item->cid = $v->id;
-                $item->year = $year;
-                $item->project = $projectName;
-                $item->pid = $pv->id;
-                //如果是第一行 显示客户名字
-                if ($first) {
-                    $item->nameshow = true;
-                    $first = false;
-                }
-                else {
-                    $item->nameshow = false;
-                }
-
-                ++$index;
-                array_push($data, $item);
+            if ($item->cid == $currentCid) {
+                $item->nameshow = false;
             }
-        }
+            else {
+                $item->nameshow = true;
+                $currentCid = $item->cid;
+            }
+
+            if ($item->project == $project && $item->tid == $tid) {
+                $item->projectshow = false;
+            }
+            else {
+                $item->projectshow = true;
+                $project = $item->project;
+                $tid = $item->tid;
+            }
+
+            $item->year = $year;
+            $item->index = $index + 1;
+        });
 
         $data = collect($data);
 
-        return response(['data' => ARSumResource::collection($data)], 200);
-
-    }
-    /**
-     * 返回客户+项目信息
-     * 默认情况下，个人返回自己创建的项目，部门经理、助理返回当前部门的项目； boss 返回全部的项目信息
-     */
-    public function query0(Request $request)
-    {
-        //获取默认过滤方案
-        $filter = FilterProgram::where(['default' => 1, 'user_id' => $this->getUserId()])->first();
-        $model = Project::with(['Customer' ])->whereIn('user_id', $this->AuthIdList());
-
-        if ($filter) {
-            $filter = (object) json_decode($filter->conf, true);
-
-            foreach ($filter as $k => $v) {
-                $v = (object) $v;
-
-                //过滤项目
-                if ($v->field == 'pid' && !Empty($v->value)) {
-
-                    switch ($v->operator) {
-                        case 0 :
-                            //项目等于
-                            $model->where(['id' => $v->value]);
-                            break;
-                        case 1 :
-                            //项目不等于
-                            $model->where('id', '!=', $v->value);
-                            break;
-                        default:
-                            $model->where(['id' => $v->value]);
-                    }
-                }
-
-                //过滤客户
-                if ($v->field == 'cust_id' && !Empty($v->value)) {
-                    switch ($v->operator) {
-                        case 0 :
-                            //项目等于
-                            $model->where(['cust_id' => $v->value]);
-                            break;
-                        case 1 :
-                            //项目不等于
-                            $model->where('cust_id', '!=', $v->value);
-                            break;
-                        default:
-                            $model->where(['cust_id' => $v->value]);
-                    }
-                }
-
-                //过滤标签
-                if ($v->field == 'cust_id' && !Empty($v->value)) {
-
-                }
-
-            }
-        }
-
-        $projects = $model->orderBy('cust_id')->get();
-        return $projects;
-        //获取当前用户的所有项目
-        $filter = $request;
-//        $projects = Project::with(['Customer'])->whereIn('user_id', $this->AuthIdList())->orderBy('cust_id')->get();
-        $index = 1;
-        $cid= null;
-
-        $filter->year = date('Y', time());
-
-        foreach ($projects as $k => $v) {
-            $projectName = $v->name;
-            $v->pid = $v->id;
-            $v->cid = $v->customer->id;
-            $v->name = $v->customer->name;
-            $v->status = $v->customer->status;
-            $v->project = $projectName;
-            $v->index = $index;
-            $v->year = $filter->year;
-
-            if ($cid == $v->cust_id) {
-                $v->nameshow = false;
-            }
-            else {
-                $v->nameshow = true;
-            }
-
-            $cid = $v->cust_id;
-            ++$index;
-        }
-        return $projects;
-        return response(['data' => ARSumResource::collection($projects)], 200);
+        return response(['status' => 'success', 'data' => ARSumResource::collection($data), 'total' => $count], 200);
     }
 
     /**以项目为主体**/
@@ -407,25 +155,20 @@ class ARSumController extends Controller
         return response($result, 200);
     }
 
-    /**
-     * 1、部门经理、助理 返回当前部门下所有用户的id
-     */
-    public function AuthIdList()
+    /**调试的情况下清空表**/
+    public function initialization()
     {
-        $user = User::find($this->getUserId());
-        //获取用户的角色
-        $userRoleName = User::find($user->id)->role->pluck('name');
+        try {
+            $tables = ['a_receivables', 'a_receivebills', 'projects','real_customers', 'receivable_plans','refunds', 'potential_customers','potential_projects'];
 
-        if ($userRoleName->contains("超级管理员")) {
-            return User::all()->pluck('id');
+            foreach ($tables as $v) {
+                DB::select('truncate table '. $v);
+            }
+
+            return response(['status' => 'success'], 200);
         }
-        else if (Department::where(['user_id' => $this->getUserId()])->first() || $userRoleName->contains("部门助理")) {
-            return User::where(['department_id' => $user->department_id])->get()->pluck('id');
-        }
-        else {
-            return collect($user->id);
+        catch (QueryException $e) {
+            return response(['status' => 'error', 'errmsg' => $e->getMessage()]);
         }
     }
-
-
 }

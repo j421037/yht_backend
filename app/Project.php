@@ -229,4 +229,187 @@ class Project extends Model
     {
         return $this->hasOne('\App\RealCustomer', 'id', 'cust_id');
     }
+
+    public function ARSum($filter, $AuthList, $offset, $limit)
+    {
+        $where = " WHERE C1.deleted_at is null AND P1.deleted_at is null ";
+
+        if ($filter) {
+            foreach ($filter as $k => $v) {
+                $v = (object)$v;
+                //过滤客户
+                if ($v->field == 'cust_id' && !Empty($v->value)) {
+                    switch ($v->operator) {
+                        case 0 :
+                            //客户等于
+                            $where .= " AND P1.cust_id = {$v->value} ";
+                            break;
+                        case 1 :
+                            //客户不等于
+                            $where .= " AND P1.cust_id != {$v->value} ";
+                            break;
+                        default:
+                            $where .= " AND P1.cust_id = {$v->value} ";
+                    }
+                }
+                //过滤状态
+                if ($v->field == 'status' && !Empty($v->value)) {
+                    switch ($v->operator) {
+                        case 0:
+                            //客户状态等于
+                            $where .= " AND C1.status = {$v->value} ";
+                            break;
+                        case 0:
+                            //客户状态不等于
+                            $where .= " AND C1.status != {$v->value} ";
+                            break;
+                        default:
+                            //默认状态
+                            $where .= " AND C1.status = {$v->value} ";
+                            break;
+                    }
+                }
+                //过滤项目
+                if ($v->field == 'pid' && !Empty($v->value)) {
+                    switch ($v->operator) {
+                        case 0:
+                            //等于
+                            $where .= " AND P1.id = {$v->value} ";
+                            break;
+                        case 1:
+                            //不等
+                            $where .= " AND P1.id != {$v->value} ";
+                            break;
+                        default:
+                            $where .= " AND P1.id = {$v->value} ";
+                    }
+                }
+                //过滤业务员
+                //非管理只能查询自己的
+                if ($v->field == 'user_id' && !Empty($v->value)) {
+                    if ($AuthList->contains($v->value)) {
+                        switch ($v->operator) {
+                            case 0:
+                                //等于
+                                $where .= " AND P1.user_id = {$v->value} ";
+                                break;
+                            case 1:
+                                //不等
+                                $where .= " AND P1.user_id != {$v->value} ";
+                                break;
+                            default:
+                                $where .= " AND P1.user_id = {$v->value} ";
+                        }
+                    }
+                }
+                //过滤部门
+                if ($v->field == 'department_id' && !Empty($v->value)) {
+                    $userList = User::where(['department_id' => $v->value])->get()->pluck('id');
+                    $userFiltered = $userList->filter(function ($item) use ($AuthList) {
+                        return $AuthList->contains($item);
+                    });
+
+                    if ($userFiltered->count() > 0) {
+                        $userFiltered = implode(',', $userFiltered->toArray());
+
+                        switch ($v->operator) {
+                            case 0:
+                                //等于
+                                $where .= " AND P1.user_id in ( {$userFiltered} ) ";
+                                break;
+                            case 1:
+                                //不等
+                                $where .= " AND P1.user_id in ( {$userFiltered} ) ";
+                                break;
+                            default:
+                                $where .= " AND P1.user_id in ( {$userFiltered} ) ";
+                        }
+                    }
+                }
+                //过滤施工范围
+                if ($v->field == 'build' && !Empty($v->value)) {
+                    switch ($v->operator) {
+                        //等于
+                        case 0:
+                            //等于
+                            $where .= " AND P1.tid = {$v->value} ";
+                            break;
+                        case 1:
+                            //不等
+                            $where .= " AND P1.tid != {$v->value} ";
+                            break;
+                        default:
+                            $where .= " AND P1.tid = {$v->value} ";
+                    }
+                }
+                //过滤税率
+                if ($v->field == 'tax' && !Empty($v->value)) {
+                    switch ($v->operator) {
+                        //等于
+                        case 0:
+                            //等于
+                            $where .= " AND P1.tax = {$v->value} ";
+                            break;
+                        case 1:
+                            //不等
+                            $where .= " AND P1.tid != {$v->value} ";
+                            break;
+                        case 2:
+                            //大于
+                            $where .= " AND P1.tid > {$v->value} ";
+                        default:
+                            $where .= " AND P1.tid = {$v->value} ";
+                    }
+                }
+                //过滤项目类型
+                if ($v->field == 'protag' && !Empty($v->value)) {
+                    switch ($v->operator) {
+                        //等于
+                        case 0:
+                            //等于
+                            $where .= " AND P1.tag = {$v->value} ";
+                            break;
+                        case 1:
+                            //不等
+                            $where .= " AND P1.tag != {$v->value} ";
+                            break;
+                        default:
+                            $where .= " AND P1.tag = {$v->value} ";
+                    }
+                }
+                //过滤是否有挂靠
+                if ($v->field == 'affiliate' && !Empty($v->value)) {
+                    switch ($v->operator) {
+                        //等于
+                        case 0:
+                            //无挂靠
+                            if ($v->value == 0) {
+                                $where .= " AND P1.affiliate is null ";
+                            } //有挂靠
+                            else {
+                                $where .= " AND P1.affiliate is not null ";
+                            }
+
+                            break;
+                        default:
+                            if ($v->value == 0) {
+                                $where .= " AND P1.affiliate is null ";
+                            } //有挂靠
+                            else {
+                                $where .= " AND P1.affiliate is not null ";
+                            }
+                    }
+                }
+            }
+        }
+
+        $sql = "SELECT P1.*,P1.name AS project, P1.id AS pid, C1.user_id AS cuid ,C1.id AS cid, C1.name, C1.status FROM projects AS P1 RIGHT JOIN real_customers AS C1 ON C1.id = P1.cust_id {$where} ORDER BY cid ASC,project ASC, tid ASC LIMIT {$offset}, {$limit}";
+        $countSql = "SELECT COUNT(*) AS total FROM projects AS P1 RIGHT JOIN real_customers AS C1 ON C1.id = P1.cust_id {$where}";
+
+        $row = DB::select($sql);
+        $total = DB::select($countSql);
+
+        return ['row' => $row, 'total' => $total[0]->total, 'sql' => $sql];
+    }
+
 }

@@ -32,11 +32,24 @@ class ProjectController extends Controller
                 }
             }
 
+            //确保 客户名称、施工范围相同的情况下，必须是同一个用户才能新建标签不一样的客户
+            if ($project = Project::where(['name' => $data['name'],'tid' => $data['tid']])->first()) {
+                if ($project->user_id != $this->getUserId()) {
+                    return response(['status' => 'error','errmsg' => '无权新建该项目']);
+                }
+            }
+
     		if (Project::create($data)) {
     			return response(['status' => 'success']);
     		}
     	} catch (QueryException $e) {
-    		return response(['status' => 'err', 'errmsg' => $e->getMessage()]);
+            $errmsg = $e->getMessage();
+            //23000  唯一索引错误
+            if ($e->getCode() == 23000) {
+                $errmsg = "该项目已经存在";
+            }
+
+    		return response(['status' => 'err', 'errmsg' => $errmsg]);
     	}
     }
 

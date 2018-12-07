@@ -13,7 +13,7 @@ class CreateProjectsTable extends Migration
      */
     public function up()
     {
-        Schema::dropIfExists('projects');
+        $this->down();
         Schema::create('projects', function (Blueprint $table) {
             $table->increments('id');
             $table->string('name')->comment('项目名称');
@@ -31,7 +31,7 @@ class CreateProjectsTable extends Migration
             // $table->foreign('cust_id')->references('id')->on('real_customers');
             // $table->foreign('user_id')->references('id')->on('users');
             // $table->foreign('attachment_id')->references('id')->on('attachments');
-            $table->unique(['name','tid']);
+            $table->unique(['name','tid','tag']);
             $table->softDeletes();
             $table->timestamps();
         });

@@ -27,7 +27,7 @@ class ARSumQuery extends TestCase
     {
         $response = $this->json('POST',"/api/arsum/query", ['name' => 'a'], $this->headers)
             ->assertStatus(200)
-            ->assertJson([]);
+            ->assertJson(['status' => 'success']);
 
 
 
