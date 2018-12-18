@@ -244,12 +244,14 @@ class Project extends Model
                             //客户等于
                             $where .= " AND P1.cust_id = {$v->value} ";
                             break;
-                        case 1 :
-                            //客户不等于
-                            $where .= " AND P1.cust_id != {$v->value} ";
+                        case 8 :
+                            //客户包含
+                            $where .= " AND C1.name like '%{$v->value}%' ";
                             break;
-                        default:
-                            $where .= " AND P1.cust_id = {$v->value} ";
+                        case 9 :
+                            //客户不包含
+                            $where .= " AND C1.name not like '%{$v->value}%' ";
+                            break;
                     }
                 }
                 //过滤状态
@@ -276,16 +278,18 @@ class Project extends Model
                             //等于
                             $where .= " AND P1.id = {$v->value} ";
                             break;
-                        case 1:
-                            //不等
-                            $where .= " AND P1.id != {$v->value} ";
+                        case 8:
+                            //包含
+                            $where .= " AND P1.name like '%{$v->value}%' ";
                             break;
-                        default:
-                            $where .= " AND P1.id = {$v->value} ";
+                        case 9:
+                            //不包含
+                            $where .= " AND P1.name not like '%{$v->value}%' ";
+                            break;
                     }
                 }
                 //过滤业务员
-                //非管理只能查询自己的
+                //非管理只能查询自己部门的
                 if ($v->field == 'user_id' && !Empty($v->value)) {
                     if ($AuthList->contains($v->value)) {
                         switch ($v->operator) {

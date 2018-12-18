@@ -23,9 +23,9 @@ class ProjectController extends Controller
             if ($request->AgreementAtta) {
                 $file = [];
                 $Finfo = new \Finfo(FILEINFO_MIME);
-                $file['path'] = Storage::disk('local')->putFile('file/'.date('Y-m-d',time()), $request->AgreementAtta);
+                $file['path'] = Storage::disk('public')->putFile('arsum/'.date('Y-m-d',time()), $request->AgreementAtta);
                 $file['name'] = $request->AgreementAtta->getClientOriginalName();
-                $file['mime'] = $Finfo->file(storage_path('app/'.$file['path']));
+                $file['mime'] = $Finfo->file(storage_path('app/public/'.$file['path']));
 
                 if ($atta = Attachment::create($file)) {
                     $data['attachment_id'] = $atta->id;

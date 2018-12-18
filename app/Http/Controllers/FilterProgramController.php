@@ -40,6 +40,8 @@ class FilterProgramController extends Controller
         $model = FilterProgram::where(['id' => $request->id, 'user_id' => $this->getUserId()])->first();
         $model->default = (Boolean) $request->default;
         $model->conf = json_encode($request->conf);
+        $model->fontsize = $request->fontSize;
+        $model->col_visible = json_encode($request->colVisible);
 
         try {
             //如果当前的方案为默认方案，则首先要把当前用户的其他方案取消

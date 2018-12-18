@@ -12,7 +12,8 @@
 */
 
 Route::get('/', function () {
-    return view('welcome');
+//    Header("Location:http://{$_SERVER['HTTP_HOST']}/");
+    //dd($_SERVER);
 });
 Route::get('/article','ArticleController@test');
 
@@ -20,5 +21,9 @@ Route::get('/article','ArticleController@test');
 Route::get('wx/auth/login','WxController@login');
 /**微信回调**/
 Route::any('wx/auth/redirect','WxController@redirect');
+Route::group(['middleware' => 'refresh.token'] ,function() {
+    /**应收附件预览**/
+    Route::get('view/attr', 'ARSumAttrViewController@index');
+});
 
 

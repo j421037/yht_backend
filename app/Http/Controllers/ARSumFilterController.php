@@ -25,7 +25,7 @@ class ARSumFilterController extends Controller
     public function ARSumFilterTable(Request $request)
     {
 
-        return response(['field' => $this->field(),'operator' => $this->operator, 'logic' => $this->logic,'program' => $this->PersonalFilterProgram(true)], 200);
+        return response(['field' => $this->FieldAndOperate(),'operator' => $this->operator, 'logic' => $this->logic,'program' => $this->PersonalFilterProgram(true)], 200);
     }
 
     /**字段检索**/
@@ -47,88 +47,41 @@ class ARSumFilterController extends Controller
 
         return response($result, 200);
     }
-
-    //字段信息
-    protected function field()
+    //在字段信息中加入操作符
+    protected function FieldAndOperate()
     {
-        return [
-            array(
-                'label' => '客户名称',
-                'value' => 'cust_id',
-                'type' => 'server'
-            ),
-            array(
-                'label' => '客户状态',
-                'value' => 'status',
-                'type'  => 'enumerate',
-                'list'  => ARSumFilterQueryResource::collection($this->GetEnumberItem('F_CMK_CUSTATUS'))
-            ),
-            array(
-                'label' => '项目名称',
-                'value' => 'pid',
-                'type' => 'server'
-            ),
-            array(
-                'label' => '部门名称',
-                'value' => 'department_id',
-                'type'  => 'enumerate',
-                'list'  => ARSumFilterQueryResource::collection(Department::all()),
-            ),
-            array(
-                'label' => '业务员',
-                'value' => 'user_id',
-                'type'  => 'enumerate',
-                'list'  => ARSumFilterQueryResource::collection(User::all()),
-            ),
-            array(
-                'label' => '施工范围',
-                'value' => 'build',
-                'type'  => 'enumerate',
-                'list'  => ARSumFilterQueryResource::collection($this->GetEnumberItem('F_CMK_PROATTR'))
-            ),
-            array(
-                'label' => '标签',
-                'value' => 'protag',
-                'type'  => 'enumerate',
-                'list'  => ARSumFilterQueryResource::collection($this->GetEnumberItem('F_CMK_CUSTAG'))
-            ),
-            array(
-                'label' => '合作金额',
-                'value' => 'cooperation_amountfor',
-                'type'  => 'input'
-            ),
-            array(
-                'label' => '客户类型',
-                'value' => 'cust_type',
-                'type'  => 'enumerate',
-                'list'  => array(['label' => '合作客户', 'value' => 1],['label' => '目标客户', 'value' => 2])
-            ),
-            array(
-                'label' => '税率',
-                'value' => 'tax',
-                'type' => "input"
-            ),
-            array(
-                'label' => '挂靠',
-                'value' => 'affiliate',
-                'type'  => "enumerate",
-                'list'  => array(['label' => '有', 'value' => 1], ['label' => '无', 'value' => 0])
-            ),
-            array(
-                'label' => '合同',
-                'value' => 'agreement',
-                'type'  => 'enumerate',
-                'list'  => array(['label' => '有', 'value' => 1], ['label' => '无', 'value' => 0])
-            )
-        ];
+        $field = $this->field();
+
+        foreach ($field as $k => $v) {
+            switch ($v['attr']) {
+                case 'string':
+                    $field[$k]['opearate'] = $this->operatorString;
+                    break;
+                case 'number':
+                    $field[$k]['opearate'] = $this->operatorNumber;
+                    break;
+                case 'enumerate':
+                    $field[$k]['opearate'] = $this->operatorEnumeration;
+                    break;
+            }
+        }
+
+        return $field;
     }
+
 
     /**返回绑定属性信息
      * @param $AttrName 属性名称
      */
     protected function GetEnumberItem($AttrKey)
     {
-        return EnumberateItem::where(['eid' => Enumberate::where(['id' => BindAttr::where(['key' => $AttrKey])->first()->eid])->first()->id])->get();
+        $list = EnumberateItem::where(['eid' => Enumberate::where(['id' => BindAttr::where(['key' => $AttrKey])->first()->eid])->first()->id])->get();
+        $item = new \StdClass;
+        $item->id = 0;
+        $item->name = "全部";
+        $list->push($item);
+
+        return $list;
     }
 
     /**返回过滤方案
@@ -177,5 +130,92 @@ class ARSumFilterController extends Controller
         }
 
         return response( FilterProgramResource::collection($program), 200);
+    }
+
+    //字段信息
+    protected function field()
+    {
+        return [
+            array(
+                'label' => '客户名称',
+                'value' => 'cust_id',
+                'type'  => 'server',
+                'attr'  => 'string',
+            ),
+            array(
+                'label' => '客户状态',
+                'value' => 'status',
+                'type'  => 'enumerate',
+                'attr'  => 'enumerate',
+                'list'  => ARSumFilterQueryResource::collection($this->GetEnumberItem('F_CMK_CUSTATUS')),
+            ),
+            array(
+                'label' => '旗下项目',
+                'value' => 'pid',
+                'type' => 'server',
+                'attr'  => 'string',
+            ),
+            array(
+                'label' => '部门名称',
+                'value' => 'department_id',
+                'type'  => 'enumerate',
+                'attr'  => 'enumerate',
+                'list'  => ARSumFilterQueryResource::collection(Department::all()),
+            ),
+            array(
+                'label' => '业务员',
+                'value' => 'user_id',
+                'type'  => 'enumerate',
+                'attr'  => 'enumerate',
+                'list'  => ARSumFilterQueryResource::collection(User::all()),
+            ),
+            array(
+                'label' => '施工范围',
+                'value' => 'build',
+                'type'  => 'enumerate',
+                'attr'  => 'enumerate',
+                'list'  => ARSumFilterQueryResource::collection($this->GetEnumberItem('F_CMK_PROATTR'))
+            ),
+            array(
+                'label' => '标签',
+                'value' => 'protag',
+                'type'  => 'enumerate',
+                'attr'  => 'enumerate',
+                'list'  => ARSumFilterQueryResource::collection($this->GetEnumberItem('F_CMK_CUSTAG'))
+            ),
+            array(
+                'label' => '合作金额',
+                'value' => 'cooperation_amountfor',
+                'type'  => 'input',
+                'attr'  => 'number',
+            ),
+            array(
+                'label' => '客户类型',
+                'value' => 'cust_type',
+                'type'  => 'enumerate',
+                'attr'  => 'enumerate',
+                'list'  => array(['label' => '合作客户', 'value' => 1],['label' => '目标客户', 'value' => 2])
+            ),
+            array(
+                'label' => '税率',
+                'value' => 'tax',
+                'type'  => "input",
+                'attr'  => 'number',
+            ),
+            array(
+                'label' => '挂靠',
+                'value' => 'affiliate',
+                'type'  => "enumerate",
+                'attr'  => 'enumerate',
+                'list'  => array(['label' => '有', 'value' => 1], ['label' => '无', 'value' => 0])
+            ),
+            array(
+                'label' => '合同',
+                'value' => 'agreement',
+                'type'  => 'enumerate',
+                'attr'  => 'enumerate',
+                'list'  => array(['label' => '有', 'value' => 1], ['label' => '无', 'value' => 0])
+            )
+        ];
     }
 }

@@ -23,6 +23,8 @@ class CreateFilterProgramsTable extends Migration
             $table->string('module')->comment('过滤方案所属模块');
             $table->longText('conf')->comment('配置信息 已json的格式存放');
             $table->boolean('default')->default(false)->comment('是否默认进入');
+            $table->tinyInteger('fontsize')->default(12)->comment('字体大小');
+            $table->longText('col_visible')->nullable()->comment('显示隐藏列');
             $table->timestamps();
             $table->softDeletes();
         });

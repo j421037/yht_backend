@@ -88,7 +88,6 @@ Route::group(['middleware' => 'refresh.token'], function() {
 
 
     Route::post('department/post/create', 'DepartmentController@store');
-    Route::post('department/get/list', 'DepartmentController@list');
     Route::post('department/put/one', 'DepartmentController@modify');
     Route::post('department/get/users', 'DepartmentController@user');
     Route::post('department/put/users', 'DepartmentController@updateUser');
@@ -131,6 +130,8 @@ Route::group(['middleware' => 'refresh.token'], function() {
     //获取点赞动态
     Route::post('article/notify/agree', 'ArticleNotifyController@agree');
     Route::post('article/notify/answer', 'ArticleNotifyController@answer');
+    //文章图集
+    Route::post('article/image/get', 'ArticleImageController@index');
     //修改文章分类
     Route::post('article/category/put', 'ArticleCategoryController@update');
     /**点赞明细**/
@@ -207,10 +208,10 @@ Route::group(['middleware' => 'refresh.token'], function() {
   Route::post('user/get/navigation', 'UserManagerController@navigation');
   Route::post('user/yht', 'YhtUserController@user');
   Route::post('m/get/basedata', 'MobileBaseController@init');
-  /*********************UEditor**************************/
-    Route::any('ueditor/config', 'UEditorController@Init');
-    Route::any('ueditor/uploadimage', 'UEditorController@UploadImage');
-    Route::any('ueditor/listimage', 'UEditorController@listImage');
+  Route::post('department/get/list', 'DepartmentController@list');
+  /*********************Editor**************************/
+    Route::any('editor/uploadimage', 'EditorController@UploadImage');
+    Route::any('editor/listimage', 'EditorController@listImage');
     /***论坛基础***/
     Route::post('forumenu/get', 'ForumController@menu');
     /**过滤方案**/

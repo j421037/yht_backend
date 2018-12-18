@@ -24,9 +24,29 @@ class Controller extends BaseController
         ["label" => '为空',"value" => 6],
         ["label" => '不为空',"value" => 7],
         ["label" => '包含', "value"   => 8],
+        ["label" => "不包含", "value" => 9],
+        ["label" => "全部", "value" => 10]
+    );
+    //数字类型的操作选项
+    protected  $operatorNumber = array(
+        ["label" => '等于', "value" => 0],
+        ["label" => '不等于',"value" => 1],
+        ["label" => '大于',"value" => 2],
+        ["label" => '大于等于',"value" => 3],
+        ["label" => '小于',"value" => 4],
+        ["label" => '小于等于',"value" => 5],
+    );
+    //字符串类型的操作选项
+    protected $operatorString = array(
+        ["label" => '等于', "value" => 0],
+        ["label" => '包含', "value"   => 8],
         ["label" => "不包含", "value" => 9]
     );
-
+    //枚举类型的选项
+    protected $operatorEnumeration = array(
+        ["label" => '等于', "value" => 0],
+        ["label" => '不等于',"value" => 1]
+    );
     protected $operatorMap = array(
         '=', '<>','>','>=','<','<=', "is null", "is not null", "like", "not like"
     );
@@ -89,11 +109,11 @@ class Controller extends BaseController
         if ($userRoleName->contains("超级管理员")) {
             return User::all()->pluck('id');
         }
-        else if (Department::where(['user_id' => $this->getUserId()])->first() || $userRoleName->contains("部门助理")) {
+        else  {
             return User::where(['department_id' => $user->department_id])->get()->pluck('id');
         }
-        else {
-            return collect($user->id);
-        }
+//        else {
+//            return collect($user->id);
+//        }
     }
 }

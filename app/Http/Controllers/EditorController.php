@@ -8,24 +8,13 @@ use Storage;
 use App\User;
 use Illuminate\Http\Request;
 
-class UEditorController extends Controller
+class EditorController extends Controller
 {
-
-
     //ueditor 配置
     public function Init(Request $request)
     {
     	
     	$config = VueUEditor::Config();
-    	$data = [];
-
-    	// if ($request->callback) {
-	    // 	if (preg_match("/^[\w_]+$/", $request->callback)) {
-
-	    // 		// $data = htmlspecialchars($request->callback) . '(' . json_encode($config) . ')';
-     //            $data = $config;
-	    // 	}
-	    // }
 
     	return response($config, 200);
     }
@@ -35,8 +24,7 @@ class UEditorController extends Controller
     */
     public function UploadImage(Request $request)
     {
-       
-        $upfile = $request->upfile;
+        $upfile = $request->file;
 
     	if (!empty($upfile)) {
 
@@ -54,6 +42,8 @@ class UEditorController extends Controller
                 "original" => $upfile->getClientOriginalName(),
                 "type" => Storage::disk('public')->mimeType($file),
                 "size" => Storage::disk('public')->size($file),
+                "uploaded" => true,
+                'link'  => $url
             );
 
             return response($info, 200);

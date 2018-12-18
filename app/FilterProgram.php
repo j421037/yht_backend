@@ -10,6 +10,6 @@ class FilterProgram extends Model
     use SoftDeletes;
 
     protected $fillable = [
-        'id','name','module', 'conf','user_id'
+        'id','name','module', 'conf','user_id','fontsize','col_visible'
     ];
 }

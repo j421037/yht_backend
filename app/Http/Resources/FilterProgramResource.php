@@ -18,7 +18,9 @@ class FilterProgramResource extends JsonResource
             'id'        => $this->id,
             'name'      => $this->name,
             'conf'      => $this->conf,
-            'default'   => $this->default
+            'default'   => $this->default,
+            'fontsize'  => $this->fontsize,
+            'colvisible'=> json_decode($this->col_visible, true)
         ];
     }
 }
