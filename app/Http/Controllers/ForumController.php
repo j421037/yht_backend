@@ -8,12 +8,24 @@ use Auth;
 use App\User;
 use App\Role;
 use App\Permission;
+use App\Department;
+use App\ForumModule;
 use Illuminate\Http\Request;
 use App\Http\Resources\ForumMenuResource;
+use App\Http\Resources\ForumModuleAllResource;
 
 class ForumController extends Controller
 {
-	/**
+    protected $department;
+    protected $Fmodel;
+
+    public function __construct(Department $department, ForumModule $model)
+    {
+        $this->department = $department;
+        $this->Fmodel = $model;
+    }
+
+    /**
 	* 返回导航信息
 	*/
     public function menu(Request $request)
@@ -48,5 +60,30 @@ class ForumController extends Controller
         $list = ForumMenuResource::collection($list);
 
         return response($list, 200);
+    }
+    //返回所有版块
+    public function AllModule()
+    {
+        $department = $this->department->orderBy('index','asc')->get();
+        $public = $this->Fmodel->all();
+
+        $department->flatMap(function($item) {
+            $item->attr = 'protected';
+            return $item;
+        });
+        //合并版块信息
+        $pub = new \StdClass;
+        $pub->id = 0;
+        $pub->name = '公共交流';
+        $pub->attr = 'public';
+
+        $department->prepend($pub);
+        $public->flatMap(function($item) use (&$department) {
+            $item->name = $item->module_name;
+            $item->attr = 'public';
+            $department->push($item);
+        });
+
+        return response(['status' => 'success', 'data' => ForumModuleAllResource::collection($department)]);
     }
 }

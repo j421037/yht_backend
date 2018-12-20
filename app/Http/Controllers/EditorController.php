@@ -27,6 +27,17 @@ class EditorController extends Controller
         $upfile = $request->file;
 
     	if (!empty($upfile)) {
+    	    //缩略图默认宽高
+            $tw = 190;
+            $th = 105;
+
+            if ($request->tw) {
+                $tw = $request->tw;
+            }
+
+            if ($request->th) {
+                $th = $request->th;
+            }
 
             $phone = User::find(Auth::user()->id)->phone;
             
@@ -34,6 +45,8 @@ class EditorController extends Controller
 
             $file = Storage::disk('public')->putFile($path, $upfile);
             $url = Storage::disk('public')->url($file);
+            $fullpath = storage_path('app/public/'.$file);
+            $thumb = $this->thumbImg($fullpath, $tw,$th);
 
             $info = array(
                 "state" => 'success',
@@ -43,7 +56,10 @@ class EditorController extends Controller
                 "type" => Storage::disk('public')->mimeType($file),
                 "size" => Storage::disk('public')->size($file),
                 "uploaded" => true,
-                'link'  => $url
+                "thumb" => $thumb,
+                "th_width" => $tw,
+                "th_height" => $th,
+                'link'  => $url.'?thumbimg='.$thumb
             );
 
             return response($info, 200);

@@ -40,13 +40,30 @@ class ArticleController extends Controller
 
     public function store(ArticleRequest $request)
     {
-        $data = $request->all();
+        $data = [];
+        $data['title'] = $request->title;
         $data['user_id'] = Auth::user()->id;
-        //处理文章缩略图
-        if (!empty($request->titlepic)) {
-            $file = Storage::disk('public')->putFile(date('Y-m-d', time()),$request->titlepic);
-            $data['titlepic'] = $file;
+
+        //文章属性
+        //公开
+        if ($request->attr == 'public') {
+            $data['attr'] = 'public';
+            $data['module_id'] = $request->module_id;
         }
+        else {
+            //私有
+            $data['attr'] = 'protected';
+            $data['module_id'] = User::find($this->getUserId())->department_id;
+        }
+
+        //文章第一个图片作为文章缩略图
+        if ($titlepic = $this->FindTitlePic($request->body)) {
+            $data['titlepic'] = $titlepic;
+        }
+
+        $data['body'] = $request->body;
+        $data['abstract'] = mb_substr(strip_tags($request->body), 0, 103,'utf-8').'...';
+        $data['status'] = $request->status;
 
         try {
             DB::beginTransaction();
@@ -192,5 +209,23 @@ class ArticleController extends Controller
                     ->orderBy('articles.updated_at', 'desc')
                     ->get();
         return $list;
+    }
+
+    /**截取文章中第一个图片**/
+    protected function FindTitlePic($body)
+    {
+        $pattern='/<img((?!src).)*src[\s]*=[\s]*[\'"](?<src>[^\'"]*)[\'"]/i';
+        $titlepic = "";
+
+        preg_match($pattern, $body,$matches);
+
+        if (count($matches) > 0 && isset($matches['src'])) {
+            $tmp = $matches['src'];
+            //截取链接后的缩略图部分
+            $tag = "?thumbimg=";
+            $titlepic = substr($tmp,strpos($tmp,$tag)+strlen($tag));
+        }
+
+        return $titlepic;
     }
 }

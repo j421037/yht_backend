@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use JWTAuth;
+use Storage;
 use App\User;
 use App\Department;
 use Illuminate\Foundation\Bus\DispatchesJobs;
@@ -115,5 +116,59 @@ class Controller extends BaseController
 //        else {
 //            return collect($user->id);
 //        }
+    }
+
+    /**处理缩略图 jpg
+     * @param $url 图像地址
+     * @param $tw 缩略图宽度
+     * @param $th 缩略图高度
+     */
+    protected function thumbImg($url, $tw, $th)
+    {
+        $info = getimagesize($url);
+        switch ($info['mime']) {
+            case 'image/jpeg':
+                $oldImg = imagecreatefromjpeg($url);
+                break;
+            case 'image/png':
+                $oldImg = imagecreatefrompng($url);
+                break;
+            case 'image/bmp':
+                $oldImg = imagecreatefrombmp($url);
+                break;
+            case 'image/gif':
+                $oldImg = imagecreatefromgif($url);
+                break;
+            default:
+                return false;
+        }
+        //构建原图像
+
+        //新建缩略图
+        $thumb = ImageCreateTrueColor($tw, $th);
+        if (!$oldImg) {
+            return false;
+        }
+
+        $ox = imagesx($oldImg);
+        $oy = imagesy($oldImg);
+        //生成缩略图
+        imagecopyresampled($thumb,$oldImg,0,0,0,0,$tw,$th,$ox,$oy);
+        $diskpath = '/thumb/'.date('Y-m-d', time()).'/';
+        $dir = storage_path('app/public'.$diskpath);
+        $filename = md5($url.time()).'.jpg';
+
+        if (!file_exists($dir)) {
+            mkdir($dir,0777, true);
+        }
+
+        $path = $dir.$filename;
+        $filepath = $diskpath.$filename;
+
+        imageJpeg($thumb, $path);
+        imagedestroy($thumb);
+        imagedestroy($oldImg);
+
+        return Storage::disk('public')->url($filepath);
     }
 }

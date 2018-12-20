@@ -10,7 +10,7 @@ class Article extends Model
 	use SoftDeletes;
     //$fillable  白名单  可以修改的值
     protected $dates = ['deleted_at'];
-    protected $fillable = ['title', 'body', 'status', 'top', 'user_id','category_id', 'titlepic'];
+    protected $fillable = ['title', 'body', 'status', 'top', 'user_id','category_id', 'titlepic','attr','module_id','abstract'];
 
     public function isFine() 
     {

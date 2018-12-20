@@ -131,7 +131,11 @@ Route::group(['middleware' => 'refresh.token'], function() {
     Route::post('article/notify/agree', 'ArticleNotifyController@agree');
     Route::post('article/notify/answer', 'ArticleNotifyController@answer');
     //文章图集
-    Route::post('article/image/get', 'ArticleImageController@index');
+    Route::post('article/photos/post', 'ArticlePhotoController@store');
+    //论坛公共版块设置
+      Route::post('article/module/table', 'ForumModuleController@index');
+      Route::post('article/module/store', 'ForumModuleController@store');
+      Route::post('article/module/all', 'ForumController@AllModule');
     //修改文章分类
     Route::post('article/category/put', 'ArticleCategoryController@update');
     /**点赞明细**/
