@@ -103,6 +103,8 @@ Route::group(['middleware' => 'refresh.token'], function() {
     /**文章模块**/
     Route::post('article/post', 'ArticleController@store');
     Route::post('article/get', 'ArticleController@index');
+    Route::post('article/portal/get', 'ArticlePortalController@index');
+    Route::post('article/modules/get', 'ArtilceModuleController@index');
     Route::post('article/category/get', 'ArticleCategoryController@index');
     Route::post('article/category/post', 'ArticleCategoryController@store');
     Route::post('article/get/{id}', 'ArticleController@show');
@@ -132,6 +134,7 @@ Route::group(['middleware' => 'refresh.token'], function() {
     Route::post('article/notify/answer', 'ArticleNotifyController@answer');
     //文章图集
     Route::post('article/photos/post', 'ArticlePhotoController@store');
+    Route::post('article/photos/one', 'ArticlePhotoController@one');
     //论坛公共版块设置
       Route::post('article/module/table', 'ForumModuleController@index');
       Route::post('article/module/store', 'ForumModuleController@store');

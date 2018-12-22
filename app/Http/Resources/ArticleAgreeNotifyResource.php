@@ -25,9 +25,9 @@ class ArticleAgreeNotifyResource extends JsonResource
             'id'        => $this->id,
             // 'sender'    => $this->sender,
             'article_id'=> $this->article_id,    
-            'title'     => $article->title,
+            'title'     => $article->title ?? "",
             'message'   => $this->_buildMessage($this->sender, $this->receiver),
-            'body'      => $this->_buildContent($article->body),
+            'body'      => $article->abstract ?? "",
             'created'   => Carbon::createFromTimestamp($this->created_at->timestamp)->diffForHumans()
         ];
     }

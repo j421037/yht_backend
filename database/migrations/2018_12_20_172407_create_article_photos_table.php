@@ -17,6 +17,7 @@ class CreateArticlePhotosTable extends Migration
         Schema::create('article_photos', function (Blueprint $table) {
             $table->increments('id');
             $table->timestamps();
+            $table->integer('counts')->comment('图片数量');
             $table->integer('user_id')->unsigned()->comment('创建人的id');
             $table->string('title')->comment('标题');
             $table->text('content')->comment('图集内容, json');

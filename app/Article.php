@@ -16,4 +16,8 @@ class Article extends Model
     {
     	return $this->hasOne('App\ArticleData');
     }
+
+    public function ArticleData() {
+        return $this->hasOne('App\ArticleData');
+    }
 }

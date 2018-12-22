@@ -23,13 +23,15 @@ class ArticleResource extends JsonResource
         return [
             'id'    => $this->id,
             'title' => $this->title,
+            'titlepic'  => $this->titlepic,
+            'abstract'  => $this->abstract,
             'user'  => $this->_user($this->user_id),
             // 'titlepic'  => $this->_getUrl($this->titlepic),
             'created' => Carbon::createFromTimestamp(strtotime($this->updated_at))->diffForHumans(),
             // 'created' => $this->created_at,
             // 'abstract' => $this->_ArticleAbstract($this->body, $this->titlepic),
             'agree' => $this->_argee($this->id),
-            'category'  => $this->_Category($this->category_id),
+//            'category'  => $this->_Category($this->category_id),
             'isfine' => $this->isFine
         ];
     }
@@ -41,10 +43,13 @@ class ArticleResource extends JsonResource
 
     protected function _argee($id)
     {
-        $agree = ArticleData::find($id)->agrees;
-        
-        if ($agree == '') {
+        $data = ArticleData::find($id);
+        $agree = 0;
+        if (!$data) {
             $agree = 0;
+        }
+        else {
+            $agree = $data->agrees;
         }
 
         return $agree;

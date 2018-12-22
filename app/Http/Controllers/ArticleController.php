@@ -18,14 +18,6 @@ use Illuminate\Support\Facades\DB;
 
 class ArticleController extends Controller
 {
-    public function index(Request $request)
-    {
-        
-        $list = ArticleResource::collection($this->ArticleQuery());
-
-        return response($list, 200);
-    }
-
     public function show($id)
     {
         $article = Article::find($id); 
@@ -62,7 +54,10 @@ class ArticleController extends Controller
         }
 
         $data['body'] = $request->body;
-        $data['abstract'] = mb_substr(strip_tags($request->body), 0, 103,'utf-8').'...';
+        $str = $request->body;
+        $str = strip_tags($str);
+        $str = preg_replace('/(\&ldquo\;|\&rdquo\;)/','',$str);
+        $data['abstract'] = mb_substr($str, 0, 103,'utf-8').'...';
         $data['status'] = $request->status;
 
         try {
@@ -142,7 +137,7 @@ class ArticleController extends Controller
         $data = Article::where(['status' => 0])->orderBy('id', 'desc')->get();
         $list = ArticleResource::collection($data);
 
-        return response($list, 200);
+        return response(['status' => 'success', 'data' => $list], 200);
     }
 
     /**草稿箱发布文章**/
@@ -164,7 +159,7 @@ class ArticleController extends Controller
     */
     public function ShowEdit(Request $request) 
     {   
-        $article = Article::select('id','title','body', 'status','category_id')
+        $article = Article::select('id','title','body', 'status','attr','module_id')
                             ->where(['id' => $request->id, 'user_id' => Auth::user()->id])
                             ->first();
 
@@ -177,38 +172,6 @@ class ArticleController extends Controller
         $list = ArticleResource::collection($this->ArticleQuery(Auth::user()->id));
 
         return response($list, 200);
-    }
-
-    /**
-    * 封装查询
-    */
-    protected function ArticleQuery($userId = null)
-    {
-        $where = ['articles.status' => 1,'articles.deleted_at' => null];
-
-        if ($userId) {
-            $where['articles.user_id'] = $userId;
-        }
-        $list = DB::table('articles')
-                    ->select(
-                        'articles.id',
-                        'articles.title', 
-                        'articles.user_id',
-                        'articles.category_id',
-                        'articles.created_at',
-                        'articles.updated_at',
-                        'article_datas.agrees', 
-                        'article_datas.comments',
-                        'article_datas.isFine'
-                    )
-                    // ->where(['articles.status' => 1])
-                    ->where($where)
-                    ->join('article_datas', 'articles.id', '=', 'article_datas.article_id')
-                   
-                    ->orderBy('article_datas.isFine', 'desc')
-                    ->orderBy('articles.updated_at', 'desc')
-                    ->get();
-        return $list;
     }
 
     /**截取文章中第一个图片**/
