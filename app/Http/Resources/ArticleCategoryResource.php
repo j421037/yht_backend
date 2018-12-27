@@ -21,7 +21,8 @@ class ArticleCategoryResource extends JsonResource
             'name'      => $this->name,
             'created'   => $this->created_at->format('Y-m-d H:i:s'),
             'updated'   => $this->updated_at->format('Y-m-d H:i:s'),
-            'user'      => $this->_user($this->user_id)
+            'user'      => $this->_user($this->user_id),
+            'department'=> $this->department->name
         ];
     }
 

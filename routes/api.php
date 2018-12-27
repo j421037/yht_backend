@@ -106,6 +106,8 @@ Route::group(['middleware' => 'refresh.token'], function() {
     Route::post('article/portal/get', 'ArticlePortalController@index');
     Route::post('article/modules/get', 'ArtilceModuleController@index');
     Route::post('article/category/get', 'ArticleCategoryController@index');
+    Route::post('article/list/category/get', 'ArticleCategoryController@ArticleListCategory');
+    Route::post('article/category/manager/get', 'ArticleCategoryController@manager');
     Route::post('article/category/post', 'ArticleCategoryController@store');
     Route::post('article/get/{id}', 'ArticleController@show');
     /**评论模块**/
@@ -127,8 +129,9 @@ Route::group(['middleware' => 'refresh.token'], function() {
     Route::post('article/publish/get', 'ArticleController@PublishList');
     //删除文章
     Route::post('article/delete', 'ArticleController@delete');
-    //加精  取消加精
-    Route::post('article/fine/set', 'ArticleFineController@fine');
+    //置顶
+      Route::post('article/settop', 'ArtilceModuleController@SetTop');
+      Route::post('article/canceltop', 'ArtilceModuleController@CancelTop');
     //获取点赞动态
     Route::post('article/notify/agree', 'ArticleNotifyController@agree');
     Route::post('article/notify/answer', 'ArticleNotifyController@answer');
@@ -138,6 +141,7 @@ Route::group(['middleware' => 'refresh.token'], function() {
     //论坛公共版块设置
       Route::post('article/module/table', 'ForumModuleController@index');
       Route::post('article/module/store', 'ForumModuleController@store');
+      Route::post('article/module/sync', 'ForumModuleController@sync');
       Route::post('article/module/all', 'ForumController@AllModule');
     //修改文章分类
     Route::post('article/category/put', 'ArticleCategoryController@update');

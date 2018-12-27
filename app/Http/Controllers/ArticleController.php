@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Department;
 use Auth;
 use Storage;
 use App\User;
@@ -10,6 +11,7 @@ use App\ArticleData;
 use App\ArticleAgree;
 use App\ArticleNotify;
 use App\Events\ArticleComment;
+use App\ForumModuleMappingDepartment;
 use Illuminate\Http\Request;
 use App\Http\Requests\ArticleRequest;
 use App\Http\Resources\ArticleResource;
@@ -34,19 +36,21 @@ class ArticleController extends Controller
     {
         $data = [];
         $data['title'] = $request->title;
-        $data['user_id'] = Auth::user()->id;
+        $data['user_id'] = $this->getUserId();
 
         //文章属性
         //公开
         if ($request->attr == 'public') {
             $data['attr'] = 'public';
-            $data['module_id'] = $request->module_id;
         }
         else {
             //私有
             $data['attr'] = 'protected';
-            $data['module_id'] = User::find($this->getUserId())->department_id;
         }
+        //部门名称
+        $dename = Department::find(User::find($this->getUserId())->department_id)->name;
+        //模块
+        $data['module_id'] = ForumModuleMappingDepartment::where(['name' => $dename])->first()->id;
 
         //文章第一个图片作为文章缩略图
         if ($titlepic = $this->FindTitlePic($request->body)) {
@@ -59,6 +63,7 @@ class ArticleController extends Controller
         $str = preg_replace('/(\&ldquo\;|\&rdquo\;)/','',$str);
         $data['abstract'] = mb_substr($str, 0, 103,'utf-8').'...';
         $data['status'] = $request->status;
+        $data['category_id'] = $request->category;
 
         try {
             DB::beginTransaction();
@@ -127,8 +132,6 @@ class ArticleController extends Controller
             DB::rollback();
             return response(['status' => 'error', 'error'=>$e->getMessage()], 200);
         }
-
-       
     }
 
     /**草稿箱**/
@@ -169,7 +172,8 @@ class ArticleController extends Controller
     /**已发布文章列表**/
     public function PublishList(Request $request)
     {
-        $list = ArticleResource::collection($this->ArticleQuery(Auth::user()->id));
+        $list = Article::with(['ArticleData'])->where(['user_id' => $this->getUserId()])->get();
+        $list = ArticleResource::collection($list);
 
         return response($list, 200);
     }

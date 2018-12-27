@@ -97,7 +97,11 @@ class Controller extends BaseController
     {
         return $this->getUser()->id;
     }
-
+    //判断用户是否admin
+    protected function isAdmin()
+    {
+        return (bool) User::find($this->getUserId())->group == 'admin';
+    }
     /**
      * 1、部门经理、助理 返回当前部门下所有用户的id
      */
@@ -113,11 +117,15 @@ class Controller extends BaseController
         else  {
             return User::where(['department_id' => $user->department_id])->get()->pluck('id');
         }
-//        else {
-//            return collect($user->id);
-//        }
     }
-
+    /**
+    * 获取当前部门id
+     *
+     */
+    protected  function getDepartId()
+    {
+        return Department::find(User::find($this->getUserId())->department_id)->id;
+    }
     /**处理缩略图 jpg
      * @param $url 图像地址
      * @param $tw 缩略图宽度
