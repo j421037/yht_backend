@@ -91,8 +91,27 @@ class ArticleController extends Controller
     public function update(ArticleRequest $request)
     {
         try {
+            $data = [];
+            $data['title'] = $request->title;
+            $data['body'] = $request->body;
+            $data['category_id'] = $request->category;
+            $data['module_id'] = $request->module_id;
+            $data['attr'] = $request->attr;
+            //文章第一个图片作为文章缩略图
+            if ($titlepic = $this->FindTitlePic($request->body)) {
+                $data['titlepic'] = $titlepic;
+            }
+            //文章摘要
+            $str = $request->body;
+            $str = strip_tags($str);
+            $str = preg_replace('/(\&ldquo\;|\&rdquo\;)/','',$str);
+            $data['abstract'] = mb_substr($str, 0, 103,'utf-8').'...';
+            //是否发布文章
+            if ($request->status == 1) {
+                $data['status'] = 1;
+            }
 
-            $article = Article::where(['id' => $request->id, 'user_id' => Auth::user()->id])->update($request->all());
+            $article = Article::where(['id' => $request->id, 'user_id' => $this->getUserId()])->update($data);
 
             if ($article) {
                 return response(['status' => 'success'], 200);
@@ -106,11 +125,11 @@ class ArticleController extends Controller
 
     public function delete(Request $request)
     {
-        $article = Article::where(['id' => $request->id,'user_id' => Auth::user()->id])->first();
+        $article = Article::where(['id' => $request->id,'user_id' => $this->getUserId()])->first();
 
-        if (User::find(Auth::user()->id)->group == 'admin') {
-            $article = Article::find($request->id);
-        }
+//        if (User::find(Auth::user()->id)->group == 'admin') {
+//            $article = Article::find($request->id);
+//        }
 
         try {
             DB::beginTransaction();
@@ -146,7 +165,7 @@ class ArticleController extends Controller
     /**草稿箱发布文章**/
     public function publish(Request $request) 
     {
-        $article = Article::where(['id' => $request->id, 'user_id' => Auth::user()->id])->first();
+        $article = Article::where(['id' => $request->id, 'user_id' => $this->getUserId()])->first();
 
         $article->status = 1;
 
@@ -162,11 +181,14 @@ class ArticleController extends Controller
     */
     public function ShowEdit(Request $request) 
     {   
-        $article = Article::select('id','title','body', 'status','attr','module_id')
+        $article = Article::select('id','title','body', 'status','attr','module_id','category_id')
                             ->where(['id' => $request->id, 'user_id' => Auth::user()->id])
                             ->first();
 
-        return response($article, 200);
+        if ($article)
+            return response(['status' => 'success','data' => $article], 200);
+        else
+            return response(['status' => 'error', 'errmsg' => '无权修改该文章'],202);
     }
 
     /**已发布文章列表**/

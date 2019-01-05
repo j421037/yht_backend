@@ -32,6 +32,8 @@ Route::group(['middleware' => 'refresh.token'], function() {
   Route::post('auth/logout', 'AuthController@logout');
   Route::post('auth/put/resetpass', 'AuthController@resetPass');
 
+  /**文件上传**/
+  Route::post('file/upload','AttachmentController@upload');
   Route::group(['middleware' => 'authority'], function() {
     Route::post('permission/menu', 'PermissionController@getMenu');
     Route::post('permission/add', 'PermissionController@addMenu');
@@ -210,6 +212,7 @@ Route::group(['middleware' => 'refresh.token'], function() {
     Route::post('bindattr/all', 'BindAttrController@list');
     
     Route::post('bindattr/update', 'BindAttrController@update');
+
     /**调试初始化应收数据**/
     Route::post('arsum/initialization', 'ARSumController@initialization');
   });

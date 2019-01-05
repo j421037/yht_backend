@@ -24,6 +24,9 @@ Route::any('wx/auth/redirect','WxController@redirect');
 Route::group(['middleware' => 'refresh.token'] ,function() {
     /**应收附件预览**/
     Route::get('view/attr', 'ARSumAttrViewController@index');
+    /**附件下载**/
+    Route::get('file/download/{key}', 'AttachmentController@download');
 });
+
 
 

@@ -46,6 +46,11 @@ class ArtilceModuleController extends Controller
         //通过判断当前请求的用户所在的部门，如果属于当前module_id对应的部门
         // 则可以获取当前部门所有文章
         $orm = $this->article->with(['ArticleData'])->where(['status' => 1,'module_id' => $request->module_id]);
+        //文章分类
+        if ($category = $request->category) {
+            $orm->where(['category_id' => $category]);
+        }
+
         //检查当前请求的模块
         $module = $this->mapping->find($request->module_id);
         $users = $this->user->where(['department_id' => $module->sid])->get()->pluck('id');

@@ -24,8 +24,9 @@ class ArticleModuleIndexRequest extends FormRequest
     public function rules()
     {
         return [
-            'attr'  => 'required',
-            'module_id' => 'required'
+            'attr'      => 'required',
+            'module_id' => 'required',
+            'category'  => 'required'
         ];
     }
 }

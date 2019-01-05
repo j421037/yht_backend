@@ -8,6 +8,6 @@ class Attachment extends Model
 {
     //
     protected $fillable = [
-    	'name','path','mime'
+    	'name','path','mime','key'
     ];
 }
