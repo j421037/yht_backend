@@ -40,6 +40,14 @@ class ArticleCategoryController extends Controller
 
         return response(['status' => 'success','data' => $list], 200);
     }
+    /**返回系统专区的分类**/
+    public function feelback(Request $request)
+    {
+        $module = $this->mapping->where(['name' => '系统专区'])->first();
+        $category = $this->category->where(['module_id' => $module->id])->get();
+
+        return response(['status' => 'success', 'data' => ArticleCategoryResource::collection($category)], 200);
+    }
     /**文章列表页获取分类**/
     public function ArticleListCategory(Request $request)
     {
@@ -73,8 +81,11 @@ class ArticleCategoryController extends Controller
     	try {
             $department = $this->department->where(['user_id' => $this->getUserId()])->first();
 
-            if ($department || $this->isAdmin()) {
+            if ($department) {
                 $module_id = $this->mapping->where(['sid' => $department->id,'attr' => 'protected'])->first()->id;
+            }
+            else if ($this->isAdmin()) {
+                $module_id = $request->module_id;
             }
             else {
                 return response(['status' => 'error','errmsg' => '没有操作该功能的权限']);
@@ -101,12 +112,19 @@ class ArticleCategoryController extends Controller
         try {
             $department = $this->department->where(['user_id' => $this->getUserId()])->first();
 
-            if (!$department) {
+            //非部门管理并且也不是系统管理 则没有权限
+            if (!$department && !$this->isAdmin()) {
 
                 return response(['status' => 'error','errmsg' => '没有操作该功能的权限']);
             }
+            //正常部门管理
             $category = ArticleCategory::find($request->id);
             $category->name = $request->name;
+
+            //如果是系统管理 则可以跨模块修改
+            if ($this->isAdmin()) {
+                $category->module_id = (int) $request->module_id;
+            }
 
             if ($category->save()) {
                 return response(['status' => 'success'], 200);

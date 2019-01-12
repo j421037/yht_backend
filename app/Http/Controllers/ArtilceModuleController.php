@@ -55,7 +55,7 @@ class ArtilceModuleController extends Controller
         $module = $this->mapping->find($request->module_id);
         $users = $this->user->where(['department_id' => $module->sid])->get()->pluck('id');
         //当前id不在部门列表内 则只显示公开信息
-        if (!$users->contains($this->getUserId())) {
+        if (!$users->contains($this->getUserId()) && $module->attr != 'public') {
             //返回当前部门的所有数据
             $orm = $orm->where(['attr' => 'public']);
         }

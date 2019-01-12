@@ -7,19 +7,32 @@ use Auth;
 use Storage;
 use App\User;
 use App\Article;
+use App\ArticleCategory;
 use App\ArticleData;
 use App\ArticleAgree;
 use App\ArticleNotify;
 use App\Events\ArticleComment;
-use App\ForumModuleMappingDepartment;
+use App\ForumModuleMappingDepartment AS FMapping;
 use Illuminate\Http\Request;
 use App\Http\Requests\ArticleRequest;
 use App\Http\Resources\ArticleResource;
 use App\Http\Resources\ArticleContentResource;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Database\QueryException;
 
 class ArticleController extends Controller
 {
+    private $mapping;
+    private $article;
+    private $category;
+
+    public function __construct(FMapping $mapping, Article $article, ArticleCategory $category)
+    {
+        $this->mapping = $mapping;
+        $this->article = $article;
+        $this->category = $category;
+    }
+
     public function show($id)
     {
         $article = Article::find($id); 
@@ -39,18 +52,18 @@ class ArticleController extends Controller
         $data['user_id'] = $this->getUserId();
 
         //文章属性
-        //公开
-        if ($request->attr == 'public') {
-            $data['attr'] = 'public';
-        }
-        else {
-            //私有
+        //私有
+        if ($request->attr == 'protected') {
             $data['attr'] = 'protected';
         }
-        //部门名称
-        $dename = Department::find(User::find($this->getUserId())->department_id)->name;
+        else {
+            //公开
+            $data['attr'] = 'public';
+        }
+
         //模块
-        $data['module_id'] = ForumModuleMappingDepartment::where(['name' => $dename])->first()->id;
+        $data['module_id'] = $request->module_id;
+
 
         //文章第一个图片作为文章缩略图
         if ($titlepic = $this->FindTitlePic($request->body)) {
@@ -88,6 +101,7 @@ class ArticleController extends Controller
         }
     }
 
+
     public function update(ArticleRequest $request)
     {
         try {
@@ -95,7 +109,6 @@ class ArticleController extends Controller
             $data['title'] = $request->title;
             $data['body'] = $request->body;
             $data['category_id'] = $request->category;
-            $data['module_id'] = $request->module_id;
             $data['attr'] = $request->attr;
             //文章第一个图片作为文章缩略图
             if ($titlepic = $this->FindTitlePic($request->body)) {
@@ -123,13 +136,44 @@ class ArticleController extends Controller
         }
     }
 
+    /**
+     *修改文章分类,只限于本部门的分类
+     */
+    public function UpdateCategory(Request $request)
+    {
+        try {
+            if ($this->isAdmin() || $this->isManager()) {
+                $article = $this->article->find($request->article_id);
+                $module = $this->mapping->find($article->module_id);
+                //当前模块下所有的分类
+                $categories = $this->category->where(['module_id' => $module->id])->get()->pluck('id');
+
+                if ($categories->contains($request->category_id)) {
+                    $article->category_id = $request->category_id;
+                    $article->save();
+
+                    return response(['status' => 'success'], 200);
+                }
+                else {
+                    throw(new \Exception('分类不存在'));
+                }
+
+            }
+            else {
+                throw(new \Exception('没有权限'));
+            }
+        }
+        catch (QueryExpetion $e) {
+            return reponse(['status' => 'error', 'errmsg' => $e->getMessage()], 202);
+        }
+        catch (\Exception $e) {
+            return response(['status' => 'error', 'errmsg' => $e->getMessage()], 202);
+        }
+    }
+
     public function delete(Request $request)
     {
         $article = Article::where(['id' => $request->id,'user_id' => $this->getUserId()])->first();
-
-//        if (User::find(Auth::user()->id)->group == 'admin') {
-//            $article = Article::find($request->id);
-//        }
 
         try {
             DB::beginTransaction();
@@ -194,7 +238,7 @@ class ArticleController extends Controller
     /**已发布文章列表**/
     public function PublishList(Request $request)
     {
-        $list = Article::with(['ArticleData'])->where(['user_id' => $this->getUserId()])->get();
+        $list = Article::with(['ArticleData'])->where(['user_id' => $this->getUserId()])->orderBy('id','desc')->get();
         $list = ArticleResource::collection($list);
 
         return response($list, 200);
@@ -217,4 +261,25 @@ class ArticleController extends Controller
 
         return $titlepic;
     }
+
+    //获取用户对应的模块id
+    protected function GetModuleId($moduleName = null)
+    {
+        $orm = $this->mapping;
+        //如果通过名称的方式查询， 只能查询到属性为公开的模块
+        if ($moduleName) {
+            $name = $moduleName;
+            $orm->where(['attr' => 'public']);
+        }
+        else {
+            $user = User::find($this->getUserId());
+            $department = Department::find($user->department_id);
+            $name = $department->name;
+        }
+
+        $module = $orm->where(['name' => $name])->first();
+
+        return $module->id;
+    }
+
 }

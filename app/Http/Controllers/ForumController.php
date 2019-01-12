@@ -13,6 +13,7 @@ use App\ForumModuleMappingDepartment as Mapping;
 use Illuminate\Http\Request;
 use App\Http\Resources\ForumMenuResource;
 use App\Http\Resources\ForumModuleAllResource;
+use App\Http\Resources\PersonalModuleAndCategoryResource;
 
 class ForumController extends Controller
 {
@@ -74,5 +75,14 @@ class ForumController extends Controller
         $list->prepend($pub);
 
         return response(['status' => 'success', 'data' => ForumModuleAllResource::collection($list)]);
+    }
+    /**发布文章时所需要的模块及对应的分类**/
+    public function PersonalModuleAndCategory()
+    {
+        if (!$this->isAdmin()) {
+            $mapping = $this->Fmodel->where(['name' => $this->getDepartName()])->orWhere(['attr' => 'public'])->orderBy('index','asc')->get();
+
+            return response(['status' => 'success','data' => PersonalModuleAndCategoryResource::collection($mapping)]);
+        }
     }
 }

@@ -20,7 +20,7 @@ class CreateForumModulesTable extends Migration
             $table->boolean('disable')->default(0)->comment('禁用状态');
             $table->timestamps();
             $table->softDeletes();
-            $table->unique('module_name');
+            //$table->unique('module_name');
         });
     }
 

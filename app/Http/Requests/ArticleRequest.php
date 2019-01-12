@@ -28,11 +28,11 @@ class ArticleRequest extends FormRequest
             'id'            => '',
             'title'         => 'required|string',
             'body'          => 'required',
-            'attr'          => 'required',
+            'attr'          => '',
             'category'      => 'required',
             'status'        => '',
             'module_id'     => '',
-
+            'module_name'   => ''
         ];
     }
 }

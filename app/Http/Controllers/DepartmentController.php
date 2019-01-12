@@ -16,8 +16,15 @@ class DepartmentController extends Controller
     *新建一个部门
     */
     public function store(Request $request)
-    {	
-    	if (Department::create(['name' => $request->name])) {
+    {
+        if ($index = Department::max('index')) {
+            $index += 1;
+        }
+        else {
+            $index = 0;
+        }
+
+    	if (Department::create(['name' => $request->name, 'index' => $index])) {
 
     		return response(['status' => 'success'], 200);
     	}

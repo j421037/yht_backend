@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Department;
 use Auth;
 use Miao;
 use JWTAuth;
@@ -104,17 +105,18 @@ class AuthController extends Controller
 
 	public function user(Request $request)
 	{
-		
-		// var_dump(time());
-		// var_dump($payload->get('exp'));
-		// var_dump($payload->get('iat'));die;
+        $data = [];
+	    $user = User::find($this->getUserId());
 
-	    $user = User::find(Auth::user()->id);
-	  
-	    return response([
-	            'status' => 'success',
-	            'data' => new UserResource($user)
-	        ]);
+	    $data['id'] = $user->id;
+	    $data['name'] = $user->name;
+	    $data['isadmin'] = $this->isAdmin();
+
+	    if ($de = Department::find($user->department_id)) {
+	        $data['department'] = $de->name;
+        }
+
+	    return response(['status' => 'success', 'data' => $data], 200);
 	}
 
 	/**修改密码**/

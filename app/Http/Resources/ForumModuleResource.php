@@ -16,8 +16,9 @@ class ForumModuleResource extends JsonResource
     {
         return  [
             'id'        => $this->id,
-            'name'      => $this->module_name,
-            'disable'   => $this->disable,
+            'name'      => $this->name,
+            'index'     => $this->index,
+            'attr'      => $this->attr == 'protected' ? '部门' : '公共',
             'created'   => $this->created_at->format('Y-m-d')
         ];
     }

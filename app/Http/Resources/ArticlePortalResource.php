@@ -27,7 +27,8 @@ class ArticlePortalResource extends JsonResource
             'agree'     => $this->ArticleData->agrees,
             'isfine'    => $this->ArticleData->isFine,
             'top'       => (bool) $this->top,
-            'category'  => $this->category_id > 0 ? ArticleCategory::find($this->category_id)->name : '其他'
+            'category'  => $this->category_id > 0 ? ArticleCategory::find($this->category_id)->name : '默认',
+            'category_id'=> $this->category_id
         ];
     }
 }

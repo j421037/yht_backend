@@ -22,7 +22,10 @@ class ArticleCategoryResource extends JsonResource
             'created'   => $this->created_at->format('Y-m-d H:i:s'),
             'updated'   => $this->updated_at->format('Y-m-d H:i:s'),
             'user'      => $this->_user($this->user_id),
-            'department'=> $this->department->name
+            'department'=> $this->department->name,
+            'module_id' => $this->module_id,
+            'label'     => $this->name,
+            'value'     => $this->id,
         ];
     }
 

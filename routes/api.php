@@ -108,10 +108,12 @@ Route::group(['middleware' => 'refresh.token'], function() {
     Route::post('article/portal/get', 'ArticlePortalController@index');
     Route::post('article/modules/get', 'ArtilceModuleController@index');
     Route::post('article/category/get', 'ArticleCategoryController@index');
+    Route::post('article/category/get/feelback', 'ArticleCategoryController@feelback');
     Route::post('article/list/category/get', 'ArticleCategoryController@ArticleListCategory');
     Route::post('article/category/manager/get', 'ArticleCategoryController@manager');
     Route::post('article/category/post', 'ArticleCategoryController@store');
     Route::post('article/get/{id}', 'ArticleController@show');
+    Route::post('article/category/change', 'ArticleController@UpdateCategory');
     /**评论模块**/
     Route::post('article/answer/post', 'ArticleAnswerController@store');
     Route::post('article/answer/get', 'ArticleAnswerController@index');
@@ -143,8 +145,11 @@ Route::group(['middleware' => 'refresh.token'], function() {
     //论坛公共版块设置
       Route::post('article/module/table', 'ForumModuleController@index');
       Route::post('article/module/store', 'ForumModuleController@store');
+      Route::post('article/module/delete', 'ForumModuleController@del');
+      Route::post('article/module/update', 'ForumModuleController@update');
       Route::post('article/module/sync', 'ForumModuleController@sync');
       Route::post('article/module/all', 'ForumController@AllModule');
+      Route::post('article/module/personal', 'ForumController@PersonalModuleAndCategory');
     //修改文章分类
     Route::post('article/category/put', 'ArticleCategoryController@update');
     /**点赞明细**/

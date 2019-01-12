@@ -102,6 +102,15 @@ class Controller extends BaseController
     {
         return (bool) User::find($this->getUserId())->group == 'admin';
     }
+    //判断当前用户有没有管理权限
+    protected function isManager()
+    {
+        if (Department::where(['user_id' => $this->getUserId()])->first()) {
+            return true;
+        }
+        return false;
+    }
+
     /**
      * 1、部门经理、助理 返回当前部门下所有用户的id
      */
@@ -125,6 +134,10 @@ class Controller extends BaseController
     protected  function getDepartId()
     {
         return Department::find(User::find($this->getUserId())->department_id)->id;
+    }
+    /**当前部门名称**/
+    protected function getDepartName() {
+        return Department::find(User::find($this->getUserId())->department_id)->name;
     }
     /**处理缩略图 jpg
      * @param $url 图像地址

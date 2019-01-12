@@ -7,6 +7,7 @@ use App\ArticleCategory;
 use App\User;
 use App\ArticleData;
 use Carbon\Carbon;
+use App\ForumModuleMappingDepartment as FMapping;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 class ArticleResource extends JsonResource
@@ -21,18 +22,15 @@ class ArticleResource extends JsonResource
     {
         // return parent::toArray($request);
         return [
-            'id'    => $this->id,
-            'title' => $this->title,
+            'id'        => $this->id,
+            'title'     => $this->title,
             'titlepic'  => $this->titlepic,
             'abstract'  => $this->abstract,
-            'user'  => $this->_user($this->user_id),
-            // 'titlepic'  => $this->_getUrl($this->titlepic),
-            'created' => Carbon::createFromTimestamp(strtotime($this->updated_at))->diffForHumans(),
-            // 'created' => $this->created_at,
-            // 'abstract' => $this->_ArticleAbstract($this->body, $this->titlepic),
-            'agree' => $this->_argee($this->id),
-//            'category'  => $this->_Category($this->category_id),
-            'isfine' => $this->isFine
+            'user'      => $this->_user($this->user_id),
+            'created'   => Carbon::createFromTimestamp(strtotime($this->updated_at))->diffForHumans(),
+            'agree'     => $this->_argee($this->id),
+            'isfine'    => $this->isFine,
+            'module'      => $this->_divide($this->module_id)
         ];
     }
 
@@ -84,5 +82,17 @@ class ArticleResource extends JsonResource
         preg_match_all($patt, $text, $result);
 
         return $result[0][0].'...';
+    }
+    //划分文章类别
+    protected function _divide($moduleId)
+    {
+        if ($moduleId) {
+            $module = FMapping::find($moduleId);
+
+            if ($moduleId) {
+                return ['name' => $module->name, 'attr' => $module->attr];
+            }
+
+        }
     }
 }

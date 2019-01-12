@@ -25,7 +25,8 @@ class ArticleCategoryStoreRequest extends FormRequest
     {
         return [
             'id'        => '',
-            'name'      => 'required'
+            'name'      => 'required',
+            'module_id' => ""
         ];
     }
 }
