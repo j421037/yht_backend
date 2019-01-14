@@ -79,10 +79,14 @@ class ForumController extends Controller
     /**发布文章时所需要的模块及对应的分类**/
     public function PersonalModuleAndCategory()
     {
-        if (!$this->isAdmin()) {
-            $mapping = $this->Fmodel->where(['name' => $this->getDepartName()])->orWhere(['attr' => 'public'])->orderBy('index','asc')->get();
+        $orm = $mapping = $this->Fmodel;
 
-            return response(['status' => 'success','data' => PersonalModuleAndCategoryResource::collection($mapping)]);
+        if (!$this->isAdmin()) {
+            $orm = $orm->where(['name' => $this->getDepartName()])->orWhere(['attr' => 'public']);
         }
+
+        $data = $orm->orderBy('index','asc')->get();
+
+        return response(['status' => 'success','data' => PersonalModuleAndCategoryResource::collection($data)]);
     }
 }

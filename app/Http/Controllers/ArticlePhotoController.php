@@ -27,7 +27,10 @@ class ArticlePhotoController extends Controller
     public function one(Request $request)
     {
         $data = $this->photoModel->inRandomOrder()->first();
-        return response(['status' => 'success','data' => new ArticlePhotoOneResource($data)], 200);
+
+        if ($data) {
+            return response(['status' => 'success', 'data' => new ArticlePhotoOneResource($data)], 200);
+        }
     }
     public function store(ArticlePhotoStoreRequest $request)
     {

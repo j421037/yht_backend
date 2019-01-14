@@ -59,6 +59,9 @@ Route::group(['middleware' => 'refresh.token'], function() {
     Route::post('user/update/workwx', 'UserManagerController@updateUserFromWorkwx');
     Route::post('user/get/init', 'UserManagerController@init');
     Route::post('user/put/workwx', 'UserManagerController@joinWorkWx');
+    Route::post('user/import','AuthController@import');
+    Route::post('user/disable', 'AuthController@UserDisable');
+      Route::post('user/delete', 'AuthController@UserDelete');
 
     Route::post('brand/post/one', 'BrandController@store');
     // Route::post('brand/get/all', 'BrandController@all');
@@ -112,6 +115,7 @@ Route::group(['middleware' => 'refresh.token'], function() {
     Route::post('article/list/category/get', 'ArticleCategoryController@ArticleListCategory');
     Route::post('article/category/manager/get', 'ArticleCategoryController@manager');
     Route::post('article/category/post', 'ArticleCategoryController@store');
+    Route::post('article/category/delete', 'ArticleCategoryController@del');
     Route::post('article/get/{id}', 'ArticleController@show');
     Route::post('article/category/change', 'ArticleController@UpdateCategory');
     /**评论模块**/

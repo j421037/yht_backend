@@ -2,22 +2,39 @@
 
 namespace App\Http\Controllers;
 
-use App\Department;
+use Excel;
 use Auth;
 use Miao;
 use JWTAuth;
 use Hash;
 use Captcha;
 use App\User;
-use App\Http\Resources\UserResource;
+use App\Role;
+use App\Department;
+//use App\Http\Resources\UserResource;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB; 
 use App\Http\Requests\RegisterFormRequest; 
 use App\Http\Requests\ResetPassFormRequst;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Database\QueryException;
+use Illuminate\Filesystem\FilesystemManager;
 
 class AuthController extends Controller
 {
+    private $user;
+    private $role;
+    private $excel;
+    private $filesystem;
+
+    public function __construct(User $user, Excel $excel, FilesystemManager $filesystem, Role $role)
+    {
+        $this->user = $user;
+        $this->excel = $excel;
+        $this->role = $role;
+        $this->filesystem = $filesystem->disk('local');
+    }
+
     public function register(RegisterFormRequest $request)
 	{
 		// return false; //停止注册
@@ -230,4 +247,113 @@ class AuthController extends Controller
 		}	
 		
 	}
+
+	/**批量导入用户**/
+	public function import(Request $request)
+    {
+        if ($request->hasFile('userfile')) {
+            $model = $this->user;//模型
+            //保存文件
+            $file = $this->filesystem->putFile('file/' . date('Y-m-d', time()),$request->userfile);
+            //获取文件路径
+            $path = storage_path('app/'.$file);
+            //读取文件内容
+            $data = Excel::selectSheetsByIndex(0)->load($path, 'UTF-8')->get(['name','phone','password']);
+
+            //保存文件结果
+            $result = array();
+            try {
+
+                $list = $this->user->whereIn('phone', $data->pluck('phone'))->get()->pluck('phone')->toArray();
+
+                $data->each(function ($items, $index) use ($model, $list, &$result) {
+                    //如果没有该用户 再新建
+                    if (!in_array($items->phone, $list)) {
+
+                        $item = [];
+                        $item['name'] = $items->name;
+                        $item['phone'] = $items->phone;
+                        $item['authorize'] = 1;
+                        $item['password'] = Hash::make(trim($items->password));
+
+                        $user = $model->create($item);
+                        unset($item['password']);
+
+                        if ($user) {
+                            $item['status'] = 1;
+                            $item['text'] = '导入成功';
+                        } else {
+                            $item['status'] = 0;
+                            $item['text'] = '导入失败';
+                        }
+
+                        array_push($result, $item);
+
+                        //分配基础角色
+                        $role = $this->role->where(['name' => '基础功能'])->first();
+                        $user->role()->sync($role->id);
+                    }
+                });
+            }
+            catch (QueryException $e)
+            {
+
+            }
+
+            return response(['status' => 'success', 'result' => $result],200);
+        }
+    }
+
+    /**禁用用户**/
+    public function UserDisable(Request $request)
+    {
+        try {
+
+            if ($request->id) {
+                //不能是管理员
+                if ($this->UserIsAdmin($request->id)) {
+                    throw new \Exception('不能禁用该用户');
+                }
+
+                $user = $this->user->find($request->id);
+                $user->authorize = 0;
+
+                if ($user->save()) {
+                    return response(['status' => 'success'], 200);
+                }
+            }
+            else {
+                throw new \Exception('请求不合法');
+            }
+        }
+        catch (\Exception $e) {
+            return response(['status' => 'error', 'errmsg' => $e->getMessage()]);
+        }
+    }
+
+    /**删除用户**/
+    public function UserDelete(Request $request)
+    {
+        try {
+
+            if ($request->id) {
+                //不能是管理员
+                if ($this->UserIsAdmin($request->id)) {
+                    throw new \Exception('不能删除该用户');
+                }
+
+                $user = $this->user->find($request->id);
+
+                if ($user->delete()) {
+                    return response(['status' => 'success'], 200);
+                }
+            }
+            else {
+                throw new \Exception('请求不合法');
+            }
+        }
+        catch (\Exception $e) {
+            return response(['status' => 'error', 'errmsg' => $e->getMessage()]);
+        }
+    }
 }

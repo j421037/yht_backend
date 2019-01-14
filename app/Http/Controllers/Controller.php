@@ -110,6 +110,11 @@ class Controller extends BaseController
         }
         return false;
     }
+    //判断一个用户是不是admin
+    protected function UserIsAdmin($userid)
+    {
+        return (bool) User::find($userid)->group == 'admin';
+    }
 
     /**
      * 1、部门经理、助理 返回当前部门下所有用户的id

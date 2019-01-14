@@ -51,7 +51,7 @@ class AttachmentController extends Controller
 
             try {
                 if ($this->model->create($data)) {
-                    return response(['status' => 'success','link' => env('APP_URL').'file/download/'.$data['key']], 201);
+                    return response(['status' => 'success','link' => env('APP_URL').'/index.php/file/download/'.$data['key']], 201);
                 }
             }
             catch (QueryException $e) {

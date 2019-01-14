@@ -91,10 +91,10 @@ class UserManagerController extends UserBaseController
     			return response(['status' => 'success'], 200);
     		}
 
-    		return response(['status' => 'fail'], 200);
+    		return response(['status' => 'error'], 200);
 
     	} catch( Exception $e) {
-    		return response(['status' => 'fail', 'msg' => $e->getMessage()], 200);
+    		return response(['status' => 'error', 'msg' => $e->getMessage()], 200);
     	}
     }
 

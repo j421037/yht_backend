@@ -1,0 +1,1 @@
+webpackJsonp([29],{DFix:function(e,n,t){"use strict";Object.defineProperty(n,"__esModule",{value:!0});var r={render:function(){var e=this.$createElement;return(this._self._c||e)("div",{staticClass:"wapper"},[this._v("\n\t论坛组件的首页\n")])},staticRenderFns:[]};var s=t("VU/8")({},r,!1,function(e){t("wn0h")},null,null);n.default=s.exports},wn0h:function(e,n){}});

@@ -29,7 +29,7 @@ class ArticleCategoryResource extends JsonResource
         ];
     }
 
-    protected function _user($id) 
+    private function _user($id)
     {
         return User::find($id)->name;
     }

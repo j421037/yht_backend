@@ -46,8 +46,8 @@ class WxController extends Controller
 
         $token = JWTAuth::encode($payload)->get();
 
-    	$url = "https://e.yhtjc.com/v2/public/dist/#/m/customer/newest?token=".$token;
-
+//    	$url = "https://e.yhtjc.com/v2/public/dist/#/m/customer/newest?token=".$token;
+        $url = "https://i.yhtjc.com/#/m/customer/newest?token=".$token;
         header("Location: {$url}");
         // echo '<pre>';
         // var_dump($url);

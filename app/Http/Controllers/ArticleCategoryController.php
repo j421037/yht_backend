@@ -5,9 +5,11 @@
 namespace App\Http\Controllers;
 
 use App\User;
+use App\Article;
 use App\ArticleCategory;
 use App\Department;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use App\ForumModuleMappingDepartment as Mapping;
 use App\Http\Requests\ArticleCategoryStoreRequest;
 use App\Http\Resources\ArticleCategoryResource;
@@ -19,12 +21,15 @@ class ArticleCategoryController extends Controller
     protected $category;
     protected $mapping;
     protected $department;
-    public function __construct(Mapping $mapping, Department $department, User $user, ArticleCategory $category)
+    protected $article;
+
+    public function __construct(Mapping $mapping, Department $department, User $user, ArticleCategory $category, Article $article)
     {
         $this->user = $user;
         $this->mapping = $mapping;
         $this->category = $category;
         $this->department = $department;
+        $this->article = $article;
     }
 
     /**
@@ -40,14 +45,7 @@ class ArticleCategoryController extends Controller
 
         return response(['status' => 'success','data' => $list], 200);
     }
-    /**返回系统专区的分类**/
-    public function feelback(Request $request)
-    {
-        $module = $this->mapping->where(['name' => '系统专区'])->first();
-        $category = $this->category->where(['module_id' => $module->id])->get();
 
-        return response(['status' => 'success', 'data' => ArticleCategoryResource::collection($category)], 200);
-    }
     /**文章列表页获取分类**/
     public function ArticleListCategory(Request $request)
     {
@@ -133,5 +131,55 @@ class ArticleCategoryController extends Controller
         } catch(\Illuminate\Database\QueryException $e) {
             return response(['status' => 'error', 'error' => $e->getMessage()], 200);
         }
+    }
+
+    //只能删除当前部门的分类
+
+    public function del(Request $request)
+    {
+        try {
+            DB::beginTransaction();
+
+            $category = $this->category->find($request->id);
+
+            if (!$category) {
+                throw new \Exception('该分类不存在');
+            }
+
+            //管理员
+            if ($this->isAdmin()) {
+                $result = $category->delete();
+            }
+            else if ($this->isManager()) {
+                //经理 判断分类的权限
+                $mapping = $this->mapping->find($category->module_id);
+                $department = $this->department->find($mapping->sid);
+
+                if ($department->user_id == $this->getUserId()) {
+                    $result = $category->delete();
+                }
+            }
+            else {
+                throw new \Exception('没有权限操作该内容');
+            }
+
+            if ($result) {
+                //当前分类文章转移到默认分类
+                $this->article->where(['category_id' => $request->id])->update(['category_id' => 0]);
+                DB::commit();
+
+                return response(['status' => 'success'], 200);
+            }
+
+        }
+        catch (QueryException $e) {
+            DB::rollback();
+            $errmsg =  $e->getMessage();
+        }
+        catch (\Exception $e) {
+            $errmsg =  $e->getMessage();
+        }
+
+        return response(['status' => 'error','errmsg' => $errmsg]);
     }
 }

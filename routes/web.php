@@ -14,6 +14,9 @@
 Route::get('/', function () {
 //    Header("Location:http://{$_SERVER['HTTP_HOST']}/");
     //dd($_SERVER);
+    //return 66;
+    header('Location:http://i.yhtjc.com/');
+    exit;
 });
 Route::get('/article','ArticleController@test');
 
