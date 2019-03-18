@@ -31,5 +31,14 @@ Route::group(['middleware' => 'refresh.token'] ,function() {
     Route::get('file/download/{key}', 'AttachmentController@download');
 });
 
+Route::get("/aes", function() {
+    $key = "0CoJUm6Qyw8W8jud";
+    $iv = "0102030405060708";
+    $data = '{"ids":"[484730184]","br":128000,"csrf_token":""}';
+    $en_data = base64_encode(openssl_encrypt($data, "aes-256-cbc", $key, OPENSSL_RAW_DATA | OPENSSL_ZERO_PADDING, $iv));
+    var_dump($en_data);
+//    $de_data = openssl_decrypt(base64_decode($en_data), "aes-256-cbc", $key, OPENSSL_RAW_DATA|OPENSSL_ZERO_PADDING, $iv);
+//    var_dump($de_data);
 
+});
 

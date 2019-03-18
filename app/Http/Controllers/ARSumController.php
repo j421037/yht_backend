@@ -171,4 +171,21 @@ class ARSumController extends Controller
             return response(['status' => 'error', 'errmsg' => $e->getMessage()]);
         }
     }
+
+    //同步金蝶的销售订单
+    public function SyncKingdeeSaleOrder()
+    {
+        $url = "http://kingdee.miaoyi09.com/K3Cloud/YHT.WebAPI.ServiceExtend.ServicesStub.SaleOrderService.ExecuteBillQuery.common.kdsvc";
+        $params = [
+            'AcctId'    => "5c6f64cf1215e5", //账套ID 必须
+            "UserName"  => "kingdee",        //金蝶用户名 必须
+            "Password"  => "sb123.++",        // 金蝶用户名密码 必须
+            "PageSize"  => "10",
+            "PageNow"   => "1"
+        ];
+
+        $kingdee = $this->CURL($url, json_encode($params), "POST");
+
+        var_dump(json_decode($kingdee, true));
+    }
 }

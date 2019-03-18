@@ -196,6 +196,8 @@ Route::group(['middleware' => 'refresh.token'], function() {
     Route::post('arsum/role','ARSumController@role');
     Route::post('artype/store', 'ArTypeController@store');
     Route::post('artype/index', 'ArTypeController@index');
+    //同步金蝶销售订单
+    Route::post('arsum/sync_kingdee', "ARSumController@SyncKingdeeSaleOrder");
     /**应收表头**/
     Route::post('arsum/filter', 'ARSumFilterController@ARSumFilterTable');
     Route::post('arsum/filter/query', 'ARSumFilterController@FieldQuery');
@@ -212,6 +214,7 @@ Route::group(['middleware' => 'refresh.token'], function() {
     /**应收后台管理**/
     Route::post('arset/fieldtype', 'ARSetController@FieldType');
     Route::post('arset/fieldstore', 'ARSetController@StoreField');
+
     /**枚举管理**/
     Route::post('enumberate/store', 'EnumberateController@store');
     Route::post('enumberate/update', 'EnumberateController@update');

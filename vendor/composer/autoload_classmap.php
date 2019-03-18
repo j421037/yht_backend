@@ -193,6 +193,8 @@ return array(
     'App\\Listeners\\SendAgreeNotify' => $baseDir . '/app/Listeners/SendAgreeNotify.php',
     'App\\Listeners\\SendAnswerNotify' => $baseDir . '/app/Listeners/SendAnswerNotify.php',
     'App\\Listeners\\SendCommentNotify' => $baseDir . '/app/Listeners/SendCommentNotify.php',
+    'App\\Offer' => $baseDir . '/app/Offer.php',
+    'App\\OfferAttachment' => $baseDir . '/app/OfferAttachment.php',
     'App\\Permission' => $baseDir . '/app/Permission.php',
     'App\\PotentialCustomer' => $baseDir . '/app/PotentialCustomer.php',
     'App\\PotentialProject' => $baseDir . '/app/PotentialProject.php',

@@ -29,7 +29,7 @@ class MyCustomerController extends Controller
     {
         // return $request->offset;
         // DB::enableQueryLog();
-        $data = User::find( Auth::user()->id)
+        $list = User::find( Auth::user()->id)
                         ->customer()
                         ->offset($request->offset)
                         ->limit($request->limit)
@@ -39,7 +39,7 @@ class MyCustomerController extends Controller
                         ->get();
 
         // $data = PersonalCustomerResource::collection($data)->sortByDesc('sort')->values()->all();
-        $data = PersonalCustomerResource::collection($data);
+        $data = PersonalCustomerResource::collection($list);
 
         $count = Customer::where(['user_id' => Auth::user()->id])->count();
         
@@ -51,7 +51,7 @@ class MyCustomerController extends Controller
 
         $next = Customer::where(['user_id' => Auth::user()->id])->select(['id','name','demand'])->offset($nextOne)->limit($request->limit)->orderBy('id', 'desc')->get();
 
-        if ( count($data) < 1 || count($next) < 1) {
+        if ( count($list) < 1 || count($next) < 1) {
 
             $loadAll = true;
         } 

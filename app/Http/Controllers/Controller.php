@@ -197,4 +197,39 @@ class Controller extends BaseController
 
         return Storage::disk('public')->url($filepath);
     }
+
+    /**
+     *@CURL 工具
+     * @param $type 请求类型
+     * @param $url  url
+     * @param $params 请求参数列表
+     */
+    public function CURL( string $url ,string $params = "", string $type = "GET", array $header = [], string $cookie = "")
+    {
+        $ch = curl_init();
+        //CURL 参数设置
+        curl_setopt($ch,CURLOPT_URL, $url);
+
+        if (strtoupper($type) == "POST") {
+            curl_setopt($ch, CURLOPT_POST, true);
+
+            if ($params) {
+                curl_setopt($ch, CURLOPT_POSTFIELDS, $params);
+            }
+        }
+
+        curl_setopt($ch,CURLOPT_HTTPHEADER, $header);
+        curl_setopt($ch, CURLOPT_HEADER, false);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
+        if ($cookie) {
+            curl_setopt($ch, CURLOPT_COOKIE, $cookie);
+        }
+
+        if ($result = curl_exec($ch)) {
+            return $result;
+        }
+
+        return false;
+    }
 }

@@ -232,7 +232,9 @@ class Project extends Model
 
     public function ARSum($filter, $AuthList, $offset, $limit)
     {
-        $where = " WHERE C1.deleted_at is null AND P1.deleted_at is null ";
+        $ids = $AuthList->toArray();
+
+        $where = " WHERE C1.deleted_at is null AND P1.deleted_at is null AND P1.user_id in (".implode(',', $ids).")";
 
         if ($filter) {
             foreach ($filter as $k => $v) {

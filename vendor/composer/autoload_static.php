@@ -615,6 +615,8 @@ class ComposerStaticInitba3c3774eb1ce0e8e146aa0b77f5a15c
         'App\\Listeners\\SendAgreeNotify' => __DIR__ . '/../..' . '/app/Listeners/SendAgreeNotify.php',
         'App\\Listeners\\SendAnswerNotify' => __DIR__ . '/../..' . '/app/Listeners/SendAnswerNotify.php',
         'App\\Listeners\\SendCommentNotify' => __DIR__ . '/../..' . '/app/Listeners/SendCommentNotify.php',
+        'App\\Offer' => __DIR__ . '/../..' . '/app/Offer.php',
+        'App\\OfferAttachment' => __DIR__ . '/../..' . '/app/OfferAttachment.php',
         'App\\Permission' => __DIR__ . '/../..' . '/app/Permission.php',
         'App\\PotentialCustomer' => __DIR__ . '/../..' . '/app/PotentialCustomer.php',
         'App\\PotentialProject' => __DIR__ . '/../..' . '/app/PotentialProject.php',

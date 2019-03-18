@@ -51,14 +51,13 @@ class AttachmentController extends Controller
 
             try {
                 if ($this->model->create($data)) {
-                    return response(['status' => 'success','link' => env('APP_URL').'/index.php/file/download/'.$data['key']], 201);
+                    return response(['status' => 'success','link' => env('APP_URL').'/index.php/file/download/'.$data['key'],'path' => $path], 201);
                 }
             }
             catch (QueryException $e) {
                 return response(['status' => 'error','errcode' => $e->getCode(), 'errmsg' => '文件上传失败']);
             }
 
-            return response(['status' => 'success','link' => 'http://baidu.com'], 201);
         }
         else {
             return response(['status' => 'error','errmsg' => '上传文件不能为空']);
