@@ -55,32 +55,33 @@
     },
     {
         "name": "barryvdh/laravel-cors",
-        "version": "v0.11.0",
-        "version_normalized": "0.11.0.0",
+        "version": "v0.11.3",
+        "version_normalized": "0.11.3.0",
         "source": {
             "type": "git",
             "url": "https://github.com/barryvdh/laravel-cors.git",
-            "reference": "6ba64a654b4258a3ecc11aba6614c932b3442e30"
+            "reference": "c95ac944f2f20a17949aae6645692dfd3b402bca"
         },
         "dist": {
             "type": "zip",
-            "url": "https://api.github.com/repos/barryvdh/laravel-cors/zipball/6ba64a654b4258a3ecc11aba6614c932b3442e30",
-            "reference": "6ba64a654b4258a3ecc11aba6614c932b3442e30",
+            "url": "https://api.github.com/repos/barryvdh/laravel-cors/zipball/c95ac944f2f20a17949aae6645692dfd3b402bca",
+            "reference": "c95ac944f2f20a17949aae6645692dfd3b402bca",
             "shasum": ""
         },
         "require": {
             "asm89/stack-cors": "^1.2",
-            "illuminate/support": "5.3.x|5.4.x|5.5.x|5.6.x",
-            "php": ">=5.5.9",
+            "illuminate/support": "5.5.x|5.6.x|5.7.x|5.8.x",
+            "php": ">=7",
             "symfony/http-foundation": "^3.1|^4",
             "symfony/http-kernel": "^3.1|^4"
         },
         "require-dev": {
-            "orchestra/testbench": "3.x",
-            "phpunit/phpunit": "^4.8|^5.2",
+            "laravel/framework": "^5.5",
+            "orchestra/testbench": "3.3.x|3.4.x|3.5.x|3.6.x|3.7.x",
+            "phpunit/phpunit": "^4.8|^5.2|^7.0",
             "squizlabs/php_codesniffer": "^2.3"
         },
-        "time": "2018-01-04T06:59:27+00:00",
+        "time": "2019-02-26T18:08:30+00:00",
         "type": "library",
         "extra": {
             "branch-alias": {
@@ -2845,7 +2846,8 @@
         "keywords": [
             "mock",
             "xunit"
-        ]
+        ],
+        "abandoned": true
     },
     {
         "name": "psr/container",

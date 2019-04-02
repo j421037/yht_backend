@@ -68,5 +68,6 @@ class Kernel extends HttpKernel
         // 'ability' => \Zizaco\Entrust\Middleware\EntrustAbility::class,
         'authority' => \App\Http\Middleware\AuthorityMiddleware::class,
         'refresh.token'   => \App\Http\Middleware\RefreshTokenMiddleware::class,
+
     ];
 }

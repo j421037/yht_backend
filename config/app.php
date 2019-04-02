@@ -219,9 +219,4 @@ return [
         'VueUEditor' => VueUEditor\Facades\VueUEditorFacade::class,
         'Excel' => Maatwebsite\Excel\Facades\Excel::class,
     ],
-
-    /**
-    *前端vue组件的存放路径 storage/app/component
-    */
-    'component_path' => '/component/',
 ];
