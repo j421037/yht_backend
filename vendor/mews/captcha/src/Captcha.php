@@ -22,6 +22,7 @@ use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Str;
 use Intervention\Image\ImageManager;
 use Illuminate\Session\Store as Session;
+use Illuminate\Support\HtmlString;
 
 /**
  * Class Captcha
@@ -108,7 +109,7 @@ class Captcha
     /**
      * @var int
      */
-    protected $lines = 4;
+    protected $lines = 3;
 
     /**
      * @var string
@@ -159,6 +160,11 @@ class Captcha
      * @var bool
      */
     protected $sensitive = false;
+
+    /**
+     * @var bool
+     */
+    protected $math = false;
 
     /**
      * @var int
@@ -221,13 +227,13 @@ class Captcha
     {
         $this->backgrounds = $this->files->files(__DIR__ . '/../assets/backgrounds');
         $this->fonts = $this->files->files(__DIR__ . '/../assets/fonts');
-        
+
         if (app()->version() >= 5.5){
             $this->fonts = array_map(function($file) {
                 return $file->getPathName();
             }, $this->fonts);
         }
-        
+
         $this->fonts = array_values($this->fonts); //reset fonts array index
 
         $this->configure($config);
@@ -303,14 +309,22 @@ class Captcha
         $characters = str_split($this->characters);
 
         $bag = '';
-        for($i = 0; $i < $this->length; $i++)
-        {
-            $bag .= $characters[rand(0, count($characters) - 1)];
+        $key = '';
+
+        if ($this->math) {
+            $x = random_int(10, 30);
+            $y = random_int(1, 9);
+            $bag = "$x + $y = ";
+            $key = $x + $y;
+            $key .= '';
+        } else {
+            for ($i = 0; $i < $this->length; $i++) {
+                $bag .= $characters[rand(0, count($characters) - 1)];
+            }
+            $key = $this->sensitive ? $bag : $this->str->lower($bag);
         }
 
-        $bag = $this->sensitive ? $bag : $this->str->lower($bag);
-
-        $hash = $this->hasher->make($bag);
+        $hash = $this->hasher->make($key);
         $this->session->put('captcha', [
             'sensitive' => $this->sensitive,
             'key'       => $hash
@@ -440,9 +454,14 @@ class Captcha
 			$value = $this->str->lower($value);
 		}
 
-		$this->session->remove('captcha');
 
-		return $this->hasher->check($value, $key);
+        $res = $this->hasher->check($value, $key);
+        //  if verify pass,remove session
+        if ($res) {
+            $this->session->remove('captcha');
+        }
+
+        return $res;
 	}
 
 	/**
@@ -485,7 +504,7 @@ class Captcha
             }
             $attrs_str .= $attr.'="'.$value.'" ';
         }
-        return '<img src="' . $this->src($config) . '" '. trim($attrs_str).'>';
+        return new HtmlString('<img src="'.$this->src($config).'" '.trim($attrs_str).'>');
     }
 
 }

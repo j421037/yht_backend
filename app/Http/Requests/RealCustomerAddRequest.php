@@ -24,8 +24,8 @@ class RealCustomerAddRequest extends FormRequest
     public function rules()
     {
         return [
-            'name'  => 'required',
-            'type'=> 'required',
+            'name'    => 'required',
+            'type'    => 'required',
             'status'  => ""
         ];
     }

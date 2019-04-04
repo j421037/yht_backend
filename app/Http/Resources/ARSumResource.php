@@ -22,12 +22,15 @@ class ARSumResource extends JsonResource
     ];
     
     private $receivable = 0;
-    private $allRece = 0;
+    private $allRece = 0; //项目销售额
+    private $allPayment = 0;//项目回款额
+    private $allDiscount = 0; //项目优惠金额
     private $receivableList = [];
     private $receivebill = 0;
     private $receivaebillList = [];
     private $initAmount;
     private $_continueReceivable;//持续欠款月数
+    private $lastPayment; //最后付款
 
     /**
      * Transform the resource into an array.
@@ -56,13 +59,21 @@ class ARSumResource extends JsonResource
             'rowkey'        => $this->_rowKey(),  
             'cust_id'       => $this->cid,
             'pid'           => $this->pid,
-            'user_id'       => $this->user_id,  
+            'user_id'       => $this->user_id,
+            'isclose'       => $this->isclose > 0 ? "已完工" : "进行中",
             'has_init'      => $this->_checkInit($this->pid),
             'department'    => $this->_department($this->user_id),
             'init_data'     => $this->_getInit($this->pid, $this->year),
             'monthly_sales' => $this->_calcSale($this->pid), //计算每月销量
-            'cooperation_amountfor'   => number_format($this->allRece),
-            'projectshow'   => $this->projectshow
+            'projectshow'   => $this->projectshow,
+            'cooperation_amountfor'         => number_format($this->allRece),
+            'cooperation_amountfor_back'    => number_format($this->allPayment),
+            'arrears'       => number_format(bcsub(bcsub($this->allRece,$this->allPayment),$this->allDiscount)),
+            'discount'      => number_format($this->allDiscount),
+            'last_payment_date'  => empty($this->lastPayment) ? "-":date("Y-m-d",$this->lastPayment->date),
+            'payment_start_date' => $this->payment_start_date,
+            'statement_date'     => date("Y-m-d",$this->_calcStatement($this->payment_days,$this->payment_start_date,$this->lastPayment)),//计算应收款日期
+            'payment_expire'     => $this->_calcPaymentExpire($this->payment_days,$this->payment_start_date,$this->lastPayment),//计算过期天数
         ];
     }
 
@@ -94,9 +105,14 @@ class ARSumResource extends JsonResource
             else {
                 array_push($this->receivaebillList, $v);
             }
+
+            $this->allPayment += $v->amountfor;
+            $this->allDiscount += $v->discount;
         }
 
         $this->initAmount = $this->receivable - $this->receivebill;
+
+        $this->lastPayment = AReceivebill::where(['pid' => $pid])->OrderBy("date","desc")->first(); //最后回款
 
         return $this->initAmount;
     }
@@ -216,9 +232,6 @@ class ARSumResource extends JsonResource
     }
 
 
-
-
-
     /**获取本周收款计划**/
     private function _GetPlan($pid)
     {
@@ -229,9 +242,51 @@ class ARSumResource extends JsonResource
             return $plan;
         }
 
-
     }
 
+    /**
+     * 计算账单日
+     * @param int $paymentDays  账期
+     * @param int $startDate 初始日期
+     * @param int  $lastDate 上一次付款日期
+     * @return int 已付款的时间戳
+     */
 
+    private function _calcStatement($paymentDays, $startDate, $lastDate)
+    {
+        if(isset($lastDate->date))
+        {
+            $timestamp = $lastDate->date;
+        }
+        else {
+            $timestamp = $startDate;
+        }
 
+        $y = date("Y", $timestamp);
+        $m = date("m", $timestamp);
+        $d = date("d", $timestamp);
+
+        return mktime(0,0,0,$m,$d + $paymentDays,$y);
+    }
+
+    /**
+     *计算过期天数
+     * @return 返回账单日到现在的天数
+     */
+    private function _calcPaymentExpire($paymentDays, $startDate, $lastDate)
+    {
+        $timestamp = $this->_calcStatement($paymentDays,$startDate,$lastDate);
+
+        $result = $timestamp - time();
+        $day = floor(abs($result) / (60 * 60 *24));
+
+        if ($result > 0 || $this->allRece <= 0)
+        {
+            //还没到收款日期
+            return $day;
+        }
+
+        //已过期
+        return $day * -1;
+    }
 }

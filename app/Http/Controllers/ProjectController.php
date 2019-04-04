@@ -16,7 +16,8 @@ class ProjectController extends Controller
     public function store(Request $request)
     {
     	$data = $request->all();
-    	$data['user_id'] = Auth::user()->id;
+    	$data['user_id'] = $this->getUserId();
+    	$data["payment_start_date"] = strtotime($data["payment_start_date"]);
        
         try {
            

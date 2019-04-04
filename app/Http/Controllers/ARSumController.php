@@ -6,7 +6,7 @@
 */
 namespace App\Http\Controllers;
 
-use Auth;
+use App\Customer;
 use App\Role;
 use App\User;
 use App\Department;
@@ -15,6 +15,8 @@ use App\AReceivebill;
 use App\AReceivable;
 use App\Project;
 use App\FilterProgram;
+use App\Exports\ARSumExport;
+use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use App\Http\Resources\ARSumResource;
@@ -160,7 +162,6 @@ class ARSumController extends Controller
     {
         try {
             $tables = ['a_receivables', 'a_receivebills', 'projects','real_customers', 'receivable_plans','refunds', 'potential_customers','potential_projects'];
-
             foreach ($tables as $v) {
                 DB::select('truncate table '. $v);
             }
@@ -187,5 +188,81 @@ class ARSumController extends Controller
         $kingdee = $this->CURL($url, json_encode($params), "POST");
 
         var_dump(json_decode($kingdee, true));
+    }
+
+    /**
+     * 导出项目欠款信息
+     * 需要导出的内容：欠款金额
+     * @param $pid 项目id
+     * @return stream excel
+     */
+    public function ExportProjectArrears(Request $request)
+    {
+        if ($request->get('pid'))
+            return "参数有误";
+
+        $project = Project::find($request->pid);
+        $customer = RealCustomer::find($project->cust_id);
+        $sales = $this->ARBills(new AReceivable, $project->id)->toArray();
+        $payments = $this->ARBills(new AReceivebill, $project->id)->toArray();
+
+        $y = date("Y", time());//当前年
+        $m = date('m', time());//当前月
+        $begin = 0;
+        $collect = [];
+
+        //初始化今年的月份
+        for($i = 1; $i <= $m; ++$i)
+        {
+            $collect[$i] = new \StdClass;
+            $collect[$i]->year = $y;
+            $collect[$i]->month = $i;
+            $collect[$i]->begin = 0;
+            $collect[$i]->sales= 0;
+            $collect[$i]->payment = 0;
+            $collect[$i]->arrears = 0;
+            $collect[$i]->cust_name = $customer->name;
+            $collect[$i]->name = $project->name;
+        }
+
+        array_walk($sales,function($item) use (&$y,&$collect,&$begin) {
+            $item = (object) $item;
+
+            if ($item->year < $y)
+            {
+                $begin += $item->amountfor;
+            }
+            else {
+                $collect[(int)$item->month]->sales += $item->amountfor;
+            }
+        });
+
+        array_walk($payments, function($item) use (&$y,&$collect, &$begin) {
+            $item = (object) $item;
+
+            if ($item->year < $y)
+            {
+                $begin -= $item->amountfor;
+            }
+            else {
+                $collect[(int)$item->month]->payment += $item->amountfor;
+            }
+        });
+
+        array_walk($collect, function(&$item) use (&$begin) {
+            $item->begin = $begin;
+            $item->arrears = bcadd(bcsub($item->sales, $item->payment),$item->begin);
+            $begin = $item->arrears;
+        });
+
+        return Excel::download(new ARSumExport($collect),date('Y-m-d', time()).'.xlsx');
+    }
+
+    private function ARBills($model,$pid)
+    {
+        return $model->where(['pid' => $pid])
+            ->selectRaw(" *, from_unixtime(date,'%Y') as `year`,from_unixtime(date,'%m') as `month` ")
+            ->orderBy("date","asc")
+            ->get();
     }
 }

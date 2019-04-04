@@ -44,7 +44,7 @@ class RealCustomerController extends Controller
     public function store(RealCustomerAddRequest $request)
     {
     	$data = $request->all();
-        $data['user_id'] = Auth::user()->id;
+        $data['user_id'] = $this->getUserId();
 
     	try {
 
@@ -66,7 +66,7 @@ class RealCustomerController extends Controller
     		$msg = $e->getMessage();
 
     		if ($e->getCode() == 23000) {
-    			$msg = '该客户已存在!';
+    			$msg = '创建失败，请联系管理员';
     		}
 
     		return response(['status' => 'error', 'errmsg' => $msg], 200);

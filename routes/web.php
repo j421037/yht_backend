@@ -24,6 +24,8 @@ Route::group(['middleware' => 'refresh.token'] ,function() {
     Route::get('view/attr', 'ARSumAttrViewController@index');
     /**附件下载**/
     Route::get('file/download/{key}', 'AttachmentController@download');
+    /**项目欠款信息导出**/
+    Route::get("report/arrears/{pid}","ARSumController@ExportProjectArrears");
 });
 
 

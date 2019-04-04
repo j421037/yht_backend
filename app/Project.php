@@ -25,7 +25,10 @@ class Project extends Model
         'affiliate',
         'estimate',
         'phone_num',
-        "agreement"
+        "agreement",
+        "payment_start_date",
+        "last_payment_date",
+        "isclose"
     ];
 
 
@@ -417,5 +420,6 @@ class Project extends Model
 
         return ['row' => $row, 'total' => $total[0]->total, 'sql' => $sql];
     }
+
 
 }
