@@ -163,8 +163,9 @@ return [
         Miao\Providers\MiaoServiceProvider::class,
         Mews\Captcha\CaptchaServiceProvider::class,
         // Overtrue\LaravelUEditor\UEditorServiceProvider::class,
-        VueUEditor\Providers\UEditorServiceProvider::class,
+        //VueUEditor\Providers\UEditorServiceProvider::class,
         Maatwebsite\Excel\ExcelServiceProvider::class,
+        Overtrue\LaravelPinyin\ServiceProvider::class,
     ],
 
     /*
@@ -216,7 +217,7 @@ return [
         'JWTFactory' => Tymon\JWTAuth\Facades\JWTFactory::class,
         'Miao' => Miao\Facades\MiaoFacade::class,
         'Captcha' => Mews\Captcha\Facades\Captcha::class,
-        'VueUEditor' => VueUEditor\Facades\VueUEditorFacade::class,
         'Excel' => Maatwebsite\Excel\Facades\Excel::class,
+        'Pinyin' => Overtrue\LaravelPinyin\Facades\Pinyin::class,
     ],
 ];

@@ -80,6 +80,7 @@ class ComposerStaticInitba3c3774eb1ce0e8e146aa0b77f5a15c
         '6124b4c8570aa390c21fafd04a26c69f' => __DIR__ . '/..' . '/myclabs/deep-copy/src/DeepCopy/deep_copy.php',
         '801c31d8ed748cfa537fa45402288c95' => __DIR__ . '/..' . '/psy/psysh/src/functions.php',
         '5e8fe2a5ffaded85af682684fe3bbf5a' => __DIR__ . '/..' . '/mews/captcha/src/helpers.php',
+        'cda2d2f579338909929d3104d0afc501' => __DIR__ . '/..' . '/overtrue/laravel-pinyin/src/helpers.php',
     );
 
     public static $prefixLengthsPsr4 = array (
@@ -149,6 +150,11 @@ class ComposerStaticInitba3c3774eb1ce0e8e146aa0b77f5a15c
             'Psr\\Container\\' => 14,
             'PhpParser\\' => 10,
             'PhpOffice\\PhpSpreadsheet\\' => 25,
+        ),
+        'O' => 
+        array (
+            'Overtrue\\Pinyin\\' => 16,
+            'Overtrue\\LaravelPinyin\\' => 23,
         ),
         'N' => 
         array (
@@ -366,6 +372,14 @@ class ComposerStaticInitba3c3774eb1ce0e8e146aa0b77f5a15c
         array (
             0 => __DIR__ . '/..' . '/phpoffice/phpspreadsheet/src/PhpSpreadsheet',
         ),
+        'Overtrue\\Pinyin\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/overtrue/pinyin/src',
+        ),
+        'Overtrue\\LaravelPinyin\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/overtrue/laravel-pinyin/src',
+        ),
         'NunoMaduro\\Collision\\' => 
         array (
             0 => __DIR__ . '/..' . '/nunomaduro/collision/src',
@@ -543,6 +557,7 @@ class ComposerStaticInitba3c3774eb1ce0e8e146aa0b77f5a15c
         'App\\Exceptions\\ApiException' => __DIR__ . '/../..' . '/app/Exceptions/ApiExcetion.php',
         'App\\Exceptions\\Handler' => __DIR__ . '/../..' . '/app/Exceptions/Handler.php',
         'App\\Exceptions\\UserAuthorizationException' => __DIR__ . '/../..' . '/app/Exceptions/UserAuthorizationException.php',
+        'App\\Exports\\ARSumExport' => __DIR__ . '/../..' . '/app/Exports/ARSumExport.php',
         'App\\FilterProgram' => __DIR__ . '/../..' . '/app/FilterProgram.php',
         'App\\ForumModule' => __DIR__ . '/../..' . '/app/ForumModule.php',
         'App\\ForumModuleMappingDepartment' => __DIR__ . '/../..' . '/app/ForumModuleMappingDepartment.php',
@@ -588,6 +603,8 @@ class ComposerStaticInitba3c3774eb1ce0e8e146aa0b77f5a15c
         'App\\Http\\Controllers\\PermissionController' => __DIR__ . '/../..' . '/app/Http/Controllers/PermissionController.php',
         'App\\Http\\Controllers\\PotentialCustomerController' => __DIR__ . '/../..' . '/app/Http/Controllers/PotentialCustomerController.php',
         'App\\Http\\Controllers\\PotentialProjectController' => __DIR__ . '/../..' . '/app/Http/Controllers/PotentialProjectController.php',
+        'App\\Http\\Controllers\\ProductCategoryController' => __DIR__ . '/../..' . '/app/Http/Controllers/ProductCategoryController.php',
+        'App\\Http\\Controllers\\ProductsManagerController' => __DIR__ . '/../..' . '/app/Http/Controllers/ProductsManagerController.php',
         'App\\Http\\Controllers\\ProjectController' => __DIR__ . '/../..' . '/app/Http/Controllers/ProjectController.php',
         'App\\Http\\Controllers\\RealCustomerController' => __DIR__ . '/../..' . '/app/Http/Controllers/RealCustomerController.php',
         'App\\Http\\Controllers\\ReceivableController' => __DIR__ . '/../..' . '/app/Http/Controllers/ReceivableController.php',
@@ -629,6 +646,7 @@ class ComposerStaticInitba3c3774eb1ce0e8e146aa0b77f5a15c
         'App\\Http\\Requests\\ForumModuleUpdateRequest' => __DIR__ . '/../..' . '/app/Http/Requests/ForumModuleUpdateRequest.php',
         'App\\Http\\Requests\\PermissionFormRequest' => __DIR__ . '/../..' . '/app/Http/Requests/PermissionFormRequest.php',
         'App\\Http\\Requests\\PotentialProjectStoreRequest' => __DIR__ . '/../..' . '/app/Http/Requests/PotentialProjectStoreRequest.php',
+        'App\\Http\\Requests\\ProductCategoryStoreRequest' => __DIR__ . '/../..' . '/app/Http/Requests/ProductCategoryStoreRequest.php',
         'App\\Http\\Requests\\ProjectStoreRequest' => __DIR__ . '/../..' . '/app/Http/Requests/ProjectStoreRequest.php',
         'App\\Http\\Requests\\RealCustomerAddRequest' => __DIR__ . '/../..' . '/app/Http/Requests/RealCustomerAddRequest.php',
         'App\\Http\\Requests\\ReceUpdateRequest' => __DIR__ . '/../..' . '/app/Http/Requests/ReceUpdateRequest.php',
@@ -679,6 +697,7 @@ class ComposerStaticInitba3c3774eb1ce0e8e146aa0b77f5a15c
         'App\\Http\\Resources\\PersonalCustomerResource' => __DIR__ . '/../..' . '/app/Http/Resources/PersonalCustomerResource.php',
         'App\\Http\\Resources\\PersonalModuleAndCategoryResource' => __DIR__ . '/../..' . '/app/Http/Resources/PersonalModuleAndCategoryResource.php',
         'App\\Http\\Resources\\PotentialListResource' => __DIR__ . '/../..' . '/app/Http/Resources/PotentialListResource.php',
+        'App\\Http\\Resources\\ProductCategoryListResource' => __DIR__ . '/../..' . '/app/Http/Resources/ProductCategoryListResource.php',
         'App\\Http\\Resources\\ProjectQueryResource' => __DIR__ . '/../..' . '/app/Http/Resources/ProjectQueryResource.php',
         'App\\Http\\Resources\\RealCustomerQueryResource' => __DIR__ . '/../..' . '/app/Http/Resources/RealCustomerQueryResource.php',
         'App\\Http\\Resources\\RecePlanResource' => __DIR__ . '/../..' . '/app/Http/Resources/RecePlanResource.php',
@@ -701,6 +720,8 @@ class ComposerStaticInitba3c3774eb1ce0e8e146aa0b77f5a15c
         'App\\Permission' => __DIR__ . '/../..' . '/app/Permission.php',
         'App\\PotentialCustomer' => __DIR__ . '/../..' . '/app/PotentialCustomer.php',
         'App\\PotentialProject' => __DIR__ . '/../..' . '/app/PotentialProject.php',
+        'App\\ProductCategory' => __DIR__ . '/../..' . '/app/ProductCategory.php',
+        'App\\ProductsManager' => __DIR__ . '/../..' . '/app/ProductsManager.php',
         'App\\Project' => __DIR__ . '/../..' . '/app/Project.php',
         'App\\Providers\\AppServiceProvider' => __DIR__ . '/../..' . '/app/Providers/AppServiceProvider.php',
         'App\\Providers\\AuthServiceProvider' => __DIR__ . '/../..' . '/app/Providers/AuthServiceProvider.php',
@@ -2675,6 +2696,13 @@ class ComposerStaticInitba3c3774eb1ce0e8e146aa0b77f5a15c
         'NunoMaduro\\Collision\\Highlighter' => __DIR__ . '/..' . '/nunomaduro/collision/src/Highlighter.php',
         'NunoMaduro\\Collision\\Provider' => __DIR__ . '/..' . '/nunomaduro/collision/src/Provider.php',
         'NunoMaduro\\Collision\\Writer' => __DIR__ . '/..' . '/nunomaduro/collision/src/Writer.php',
+        'Overtrue\\LaravelPinyin\\Facades\\Pinyin' => __DIR__ . '/..' . '/overtrue/laravel-pinyin/src/Facades/Pinyin.php',
+        'Overtrue\\LaravelPinyin\\ServiceProvider' => __DIR__ . '/..' . '/overtrue/laravel-pinyin/src/ServiceProvider.php',
+        'Overtrue\\Pinyin\\DictLoaderInterface' => __DIR__ . '/..' . '/overtrue/pinyin/src/DictLoaderInterface.php',
+        'Overtrue\\Pinyin\\FileDictLoader' => __DIR__ . '/..' . '/overtrue/pinyin/src/FileDictLoader.php',
+        'Overtrue\\Pinyin\\GeneratorFileDictLoader' => __DIR__ . '/..' . '/overtrue/pinyin/src/GeneratorFileDictLoader.php',
+        'Overtrue\\Pinyin\\MemoryFileDictLoader' => __DIR__ . '/..' . '/overtrue/pinyin/src/MemoryFileDictLoader.php',
+        'Overtrue\\Pinyin\\Pinyin' => __DIR__ . '/..' . '/overtrue/pinyin/src/Pinyin.php',
         'PHPExcel' => __DIR__ . '/..' . '/phpoffice/phpexcel/Classes/PHPExcel.php',
         'PHPExcel_Autoloader' => __DIR__ . '/..' . '/phpoffice/phpexcel/Classes/PHPExcel/Autoloader.php',
         'PHPExcel_Best_Fit' => __DIR__ . '/..' . '/phpoffice/phpexcel/Classes/PHPExcel/Shared/trend/bestFitClass.php',
