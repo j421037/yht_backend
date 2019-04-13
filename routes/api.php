@@ -235,6 +235,7 @@ Route::group(['middleware' => 'refresh.token'], function () {
         Route::post("products/table/list", "ProductManagerController@PriceTableList");
         Route::post("products/table/delete", "ProductManagerController@PriceTableDelete");
         Route::post("products/prices","ProductPriceController@PriceList");
+        Route::post("products/params","ProductPriceController@MakeOfferParams");
     });
     /**不需要验证权限**/
     Route::post('bindattr/one', 'BindAttrController@one');
