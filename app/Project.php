@@ -418,7 +418,7 @@ class Project extends Model
         $row = DB::select($sql);
         $total = DB::select($countSql);
 
-        return ['row' => $row, 'total' => $total[0]->total, 'sql' => $sql];
+        return ['row' => $row, 'total' => $total[0]->total];
     }
 
 

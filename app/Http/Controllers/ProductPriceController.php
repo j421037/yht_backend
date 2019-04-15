@@ -4,11 +4,14 @@ namespace App\Http\Controllers;
 
 use App\ProductCategory;
 use App\ProductsManager;
+use App\PriceVersion;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use App\Http\Requests\ProductPriceListRequest;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Database\DatabaseManager;
 use App\Http\Resources\MakeOfferParamsResource;
+use App\Http\Requests\ProductPriceUpdateRequest;
 
 class ProductPriceController extends Controller
 {
@@ -18,16 +21,18 @@ class ProductPriceController extends Controller
     private $manager;
     private $category;
     private $db;
+    private $priceVersion;
     /**
      * current price table name
      */
     private $table;
 
-    public function __construct(ProductsManager $model, ProductCategory $category , DatabaseManager $db)
+    public function __construct(ProductsManager $model, ProductCategory $category , DatabaseManager $db, PriceVersion $version)
     {
         $this->manager = $model;
         $this->category = $category;
         $this->db = $db;
+        $this->priceVersion = $version;
     }
 
     /**
@@ -79,6 +84,59 @@ class ProductPriceController extends Controller
     }
 
     /**
+     * change brand price
+     *
+     * @params $request []
+     */
+    public function update(ProductPriceUpdateRequest $request)
+    {
+        try {
+            $fileCollect = $request->fileid;
+
+            if (is_array($fileCollect) && count($fileCollect) > 0)
+            {
+                $fileCollect = collect($fileCollect)->pluck("id")->toArray();
+                $fileCollect = implode(",",$fileCollect);
+            }
+            
+            $this->db->beginTransaction();
+            $model = $this->priceVersion->create([
+                "category" => $request->category,
+                "product_brand" => $request->brand,
+                "date" => strtotime($request->date),
+                "version" => $request->version_str,
+                "atta_id" => $fileCollect
+            ]);
+
+            if ($model) {
+                $manager = $this->manager->find($model->product_brand);
+                $rows = $request->rows;
+
+                foreach ($rows as &$row)
+                {
+                    $row["version"] = $model->id;
+                    $row["created_at"] = time();
+                    $row["version_l"] = $model->version;
+                }
+
+                $result = $this->db->table($manager->table)->insert($rows);
+
+                if ($result)
+                {
+                    $this->db->commit();
+                    return response(["status" => "success"], 201);
+                }
+            }
+        }
+        catch (QueryException $e)
+        {
+            $this->db->rollBack();
+            return response(["status" => "error", "errmsg" => $e->getMessage()], 200);
+        }
+        return response($model);
+    }
+
+    /**
      * price table column
      *
      * @param $json
@@ -124,7 +182,7 @@ class ProductPriceController extends Controller
         {
             if ($method == 0)
                 $v->unit = "元/条";
-            else
+            else if ($method == 1)
                 $v->unit = "吨/条";
         }
 

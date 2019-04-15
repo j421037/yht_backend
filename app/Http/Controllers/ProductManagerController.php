@@ -51,7 +51,11 @@ class ProductManagerController extends Controller
             if (Schema::hasTable($table))
                 throw new \Exception("该价格表已经存在");
 
-            $sql = "CREATE TABLE IF NOT EXISTS `{$table}` ( `id` int auto_increment primary key ,`price` decimal(20,2) not null, `created_at` int not null comment '创建时间戳'  ";
+            $sql = "CREATE TABLE IF NOT EXISTS `{$table}` ".
+                    "( `id` int auto_increment primary key ,`price` decimal(20,2) not null, ".
+                    "`version` tinyint not null  comment '版本号(id)',".
+                    "`version_l` varchar(191) not null comment '版本号' ,".
+                    "`created_at` int not null comment '创建时间戳'  ";
 
             foreach ($request->attribute as $v)
             {

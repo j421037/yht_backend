@@ -55,6 +55,7 @@ class Controller extends BaseController
     protected $logic = array(['label' => "并且", 'value' => 1],['label' => '或者', 'value' => 2]);
 
     protected $logicMap = array('AND', 'OR');
+
     /**
     *过滤空格
 	*@param Array $data
@@ -110,6 +111,16 @@ class Controller extends BaseController
         }
         return false;
     }
+
+    public function UserAuthorizeCollects() : array
+    {
+        if ($this->isAdmin())
+            return User::all()->pluck("name","id")->toArray();
+        if ($this->isManager())
+            return User::where(["department_id" => $this->getDepartId()])->pluck("name","id")->toArray();
+        return [ $this->getUserId() => $this->getUser()->name];
+    }
+
     //判断一个用户是不是admin
     protected function UserIsAdmin($userid)
     {

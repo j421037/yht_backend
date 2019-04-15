@@ -50,8 +50,8 @@ class AttachmentController extends Controller
             $data['mime'] = $Finfo->file(storage_path('app/public/'.$path));
 
             try {
-                if ($this->model->create($data)) {
-                    return response(['status' => 'success','link' => env('APP_URL').'/index.php/file/download/'.$data['key'],'path' => $path], 201);
+                if ($model = $this->model->create($data)) {
+                    return response(['status' => 'success','link' => env('APP_URL').'/index.php/file/download/'.$data['key'],'path' => $path,"id" => $model->id], 201);
                 }
             }
             catch (QueryException $e) {

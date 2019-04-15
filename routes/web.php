@@ -10,7 +10,7 @@
 |
 */
 
-Route::get('/', function () {
+Route::get('/', function() {
 
 });
 Route::get('/article','ArticleController@test');

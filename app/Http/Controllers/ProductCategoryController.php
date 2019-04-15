@@ -38,6 +38,6 @@ class ProductCategoryController extends Controller
 
     public function CategoryList(Request $request)
     {
-        return response(['status' => "success", "data" => ProductCategoryListResource::collection($this->category->all())], 200);
+        return response(['status' => "success", "data" => ProductCategoryListResource::collection($this->category->with(['childrens'])->get())], 200);
     }
 }
