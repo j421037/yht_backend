@@ -98,7 +98,7 @@ class ProductPriceController extends Controller
                 $fileCollect = collect($fileCollect)->pluck("id")->toArray();
                 $fileCollect = implode(",",$fileCollect);
             }
-            
+
             $this->db->beginTransaction();
             $model = $this->priceVersion->create([
                 "category" => $request->category,
@@ -136,6 +136,15 @@ class ProductPriceController extends Controller
         return response($model);
     }
 
+    /**
+     * price versions
+     * @params $product_brand
+     * @return price_versions list
+     */
+    public function PriceVersionList(Request $request)
+    {
+        $data = $this->priceVersion->where(["product_brand" => $request->product_brand]);
+    }
     /**
      * price table column
      *
