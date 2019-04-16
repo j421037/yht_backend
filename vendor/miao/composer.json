@@ -1,9 +1,0 @@
-{
-	"name": "miao",
-	"description": "学习自动加载",
-	"autoload": {
-        "psr-4": {
-            "miao\\test\\": "src/"
-        }
-    }
-}
