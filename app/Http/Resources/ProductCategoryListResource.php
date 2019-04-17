@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\PriceVersion;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 class ProductCategoryListResource extends JsonResource
@@ -32,9 +33,10 @@ class ProductCategoryListResource extends JsonResource
             $data["id"]     = $v->id;
             $data["name"]   = $v->brand_name;
             $data["table"]  = $v->table;
-            $data["method"] = $this->method;
+            $data["method"] = $v->method;
             $data["method_l"] = $v->method == 0 ? "面价打折" : "吨价下浮";
             $data["fields"] = $this->decodeDescription($v->columns);
+            $data["notice"] = $this->notice($v->id);
             array_push($rows, $data);
         }
 
@@ -54,4 +56,21 @@ class ProductCategoryListResource extends JsonResource
 
         return ["description" => implode("、",$rows), "mapping" => $fields];
     }
+
+    /**
+     * 调价信息
+     */
+    private function notice($id) : string
+    {
+        $row = PriceVersion::where(["product_brand" => $id])->orderBy("id","desc")->first();
+
+        if ($row)
+        {
+            return "当前价格版本: ".$row->version." ，更新于: ".date("Y-m-d",$row->date)." ， 备注: ".$row->remark;
+        }
+
+        return "暂无数据";
+    }
+
+
 }

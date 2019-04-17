@@ -8,9 +8,10 @@ use App\PriceVersion;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use App\Http\Requests\ProductPriceListRequest;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Database\DatabaseManager;
-use App\Http\Resources\MakeOfferParamsResource;
+use App\Http\Requests\PriceVersionListRequest;
+use App\Http\Requests\FastUpdateRequest;
+use App\Http\Resources\PriceVersionListResource;
 use App\Http\Requests\ProductPriceUpdateRequest;
 
 class ProductPriceController extends Controller
@@ -55,33 +56,7 @@ class ProductPriceController extends Controller
                         ]);
     }
 
-    /**
-     * makeoffer params
-     * @return  [category:[table1,table2]]
-     */
-    public function MakeOfferParams(Request $request)
-    {
-        $data = $this->category->with(['childrens'])->get();
-        $db = $this->db;
-        $row = [];
 
-        $data->map(function(&$items) use (&$db) {
-            $items->childrens->map(function(&$item) use ($db) {
-                $collect = collect(json_decode($item->columns,true));
-                $fields = $collect->pluck("field")->toArray();
-                $fieldMap = [];
-                $collect->map(function($f) use (&$fieldMap) {
-                    $fieldMap[$f["field"]] = $f["description"];
-                });
-
-                $item->products = $db->table($item->table)->select($fields)->groupBy($fields)->get();
-                $item->field_map = $fieldMap;
-            });
-        });
-
-
-        return response(["staus" => "success","data" => MakeOfferParamsResource::collection($data)], 200);
-    }
 
     /**
      * change brand price
@@ -90,60 +65,90 @@ class ProductPriceController extends Controller
      */
     public function update(ProductPriceUpdateRequest $request)
     {
-        try {
-            $fileCollect = $request->fileid;
+        $version = new \StdClass;
+        $fileCollect = $request->fileid;
 
-            if (is_array($fileCollect) && count($fileCollect) > 0)
-            {
-                $fileCollect = collect($fileCollect)->pluck("id")->toArray();
-                $fileCollect = implode(",",$fileCollect);
-            }
-
-            $this->db->beginTransaction();
-            $model = $this->priceVersion->create([
-                "category" => $request->category,
-                "product_brand" => $request->brand,
-                "date" => strtotime($request->date),
-                "version" => $request->version_str,
-                "atta_id" => $fileCollect
-            ]);
-
-            if ($model) {
-                $manager = $this->manager->find($model->product_brand);
-                $rows = $request->rows;
-
-                foreach ($rows as &$row)
-                {
-                    $row["version"] = $model->id;
-                    $row["created_at"] = time();
-                    $row["version_l"] = $model->version;
-                }
-
-                $result = $this->db->table($manager->table)->insert($rows);
-
-                if ($result)
-                {
-                    $this->db->commit();
-                    return response(["status" => "success"], 201);
-                }
-            }
-        }
-        catch (QueryException $e)
+        if (is_array($fileCollect) && count($fileCollect) > 0)
         {
-            $this->db->rollBack();
-            return response(["status" => "error", "errmsg" => $e->getMessage()], 200);
+            $fileCollect = collect($fileCollect)->pluck("id")->toArray();
+            $fileCollect = implode(",",$fileCollect);
         }
-        return response($model);
+        else {
+            $fileCollect = "";
+        }
+
+        $version->category = $request->category;
+        $version->product_brand = $request->brand;
+        $version->version = $request->version_str;
+        $version->date = strtotime($request->date);
+        $version->remark = $request->remark;
+        $version->atta_id = $fileCollect;
+
+        return response($this->BatchUpdate((Array)$version,$request->rows), 200);
     }
+
+    /**
+     * fast update
+     *
+     * @param  $request->operate == 1 up  == 0 down
+     **/
+    public function FastUpdate(FastUpdateRequest $request)
+    {
+
+        //find table name from id
+        $manager = $this->manager->find($request->product_brand);
+        $version = $this->priceVersion->find($request->version_id);
+        $rows = $this->db->table($manager->table)->where(["version" => $request->version_id])->get();
+        $version->version = $request->new_version;
+        $version->change_val = $request->discount;
+        $version->remark = $request->remark;
+        $version->operate = $request->operate;
+
+        if ($manager->method == 0)
+        {
+            $methodName = "bcmul";
+            if ($request->operate == 1)
+            {
+                //up
+                $operateNumber = (100 + $request->discount) / 100;
+            }
+            else {
+                //down
+                $operateNumber = (100 - $request->discount) / 100;
+            }
+        }
+        else {
+            $methodName = "bcadd";
+            if ($request->operate == 1)
+            {
+                //up
+                $operateNumber = $request->discount;
+            }
+            else {
+                //down
+                $operateNumber = $request->discount * -1;
+            }
+        }
+
+        $rows = $rows->map(function($item) use ($methodName,$operateNumber) {
+                    $item->price = $methodName($item->price,$operateNumber,2);
+                    unset($item->id);
+                    return (Array)$item;
+                });
+
+        return response($this->BatchUpdate($version->toArray(),$rows->all()), 200);
+    }
+
 
     /**
      * price versions
      * @params $product_brand
      * @return price_versions list
      */
-    public function PriceVersionList(Request $request)
+    public function PriceVersionList(PriceVersionListRequest $request)
     {
-        $data = $this->priceVersion->where(["product_brand" => $request->product_brand]);
+        $data = $this->priceVersion->where(["product_brand" => $request->product_brand])->orderBy("id","desc")->get();
+        return response(["status" => "success", "data" => PriceVersionListResource::collection($data)], 200);
     }
     /**
      * price table column
@@ -192,9 +197,46 @@ class ProductPriceController extends Controller
             if ($method == 0)
                 $v->unit = "元/条";
             else if ($method == 1)
-                $v->unit = "吨/条";
+                $v->unit = "元/吨";
         }
 
         return (array) $data;
     }
+
+    /**
+     * @params  $version [category, product_brand, date,version, atta_id]
+     * @params   $priceRows
+     */
+
+    private function BatchUpdate( Array $version,Array $rows):array
+    {
+        try {
+            $this->db->beginTransaction();
+            $model = $this->priceVersion->create($version);
+
+            if ($model) {
+                $manager = $this->manager->find($model->product_brand);
+
+                foreach ($rows as &$row) {
+                    $row["version"] = $model->id;
+                    $row["version_l"] = $model->version;
+                    $row["created_at"] = time();
+                }
+
+                $result = $this->db->table($manager->table)->insert($rows);
+
+                if ($result) {
+                    $this->db->commit();
+                    return ["status" => "success","errmsg" => ""];
+                }
+            }
+        }
+        catch (QueryException $e)
+        {
+            $this->db->rollBack();
+            return ["status" => "error", "errmsg" => $e->getMessage()];
+        }
+    }
+
+
 }

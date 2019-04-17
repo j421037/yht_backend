@@ -72,12 +72,8 @@ class Handler extends ExceptionHandler
     protected function invalidJson($request, ValidationException $exception)
     {
         if ($exception->validator->customMessages) {
-            $errmsg = "";
-
-            foreach ($exception->validator->customMessages as $k => $v) {
-                $errmsg = $v;
-                break;
-            }
+            $errors = $exception->errors(); //错误信息的数组
+            $errmsg = implode(",",current($errors)) or "";
         }
         else {
             $errmsg = $exception->getMessage();

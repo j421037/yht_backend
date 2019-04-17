@@ -21,6 +21,9 @@ class CreatePriceVersionsTable extends Migration
             $table->integer("date")->comment("更新日期");
             $table->string("version")->comment("版本号");
             $table->string("atta_id")->nullable()->comment("附件id集合");
+            $table->string("remark")->nullable()->comment("备注");
+            $table->tinyInteger("operate")->nullable()->comment("调价操作，1上涨0下跌");
+            $table->string("change_val")->nullable()->comment("调价的变动值");
             $table->timestamps();
         });
     }

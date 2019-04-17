@@ -10,9 +10,7 @@
 |
 */
 
-Route::get('/', function() {
-
-});
+Route::get('/', "ProductMakeOfferController@index");
 Route::get('/article','ArticleController@test');
 
 /**微信登录**/

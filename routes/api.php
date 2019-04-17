@@ -235,9 +235,13 @@ Route::group(['middleware' => 'refresh.token'], function () {
         Route::post("products/table/list", "ProductManagerController@PriceTableList");
         Route::post("products/table/delete", "ProductManagerController@PriceTableDelete");
         Route::post("products/prices","ProductPriceController@PriceList");
-        Route::post("products/params","ProductPriceController@MakeOfferParams");
         Route::post("products/prices/update", "ProductPriceController@update");
+        Route::post("products/prices/fastupdate","ProductPriceController@FastUpdate");
         Route::post("products/prices/version","ProductPriceController@PriceVersionList");
+        /**单品牌报价**/
+        Route::post("products/params","ProductMakeOfferController@params");
+        Route::post("products/offers","ProductMakeOfferController@OfferList");
+        Route::post("products/offer/store", "ProductMakeOfferController@store");
     });
     /**不需要验证权限**/
     Route::post('bindattr/one', 'BindAttrController@one');

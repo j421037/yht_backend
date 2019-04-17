@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\PriceVersion;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 class MakeOfferParamsResource extends JsonResource
@@ -32,14 +33,32 @@ class MakeOfferParamsResource extends JsonResource
 
         foreach($arr as $v)
         {
-            array_push($rows, ["label" => $v->brand_name, "value" => $v->brand_id,"products" => $v->products,"field_map" => $v->field_map]);
+            array_push($rows, [
+                            "label"     => $v->brand_name,
+                            "value"     => $v->id,
+                            "products"  => $v->products,
+                            "field_map" => $v->field_map,
+                            "mode"      => $v->method,
+                            "versions"  => $this->getVersions($v->id)
+                    ]);
         }
 
         return $rows;
     }
 
-//    /**
-//     * prices table field
-//     */
-//    private function
+    /**
+     * 所有的调价版本
+     */
+    private function getVersions($id) : array
+    {
+        $rows = PriceVersion::where(["product_brand" => $id])->orderBy("id","desc")->get();
+        $data = [];
+
+        foreach ($rows as $row)
+        {
+            array_push($data,["label" => $row->version." (".date("Y-m-d",$row->date).") ","value" => $row->id]);
+        }
+
+        return $data;
+    }
 }

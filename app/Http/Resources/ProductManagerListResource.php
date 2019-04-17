@@ -18,8 +18,8 @@ class ProductManagerListResource extends JsonResource
             "id"        => $this->id,
             "name"      => $this->brand_name,
             "table"     => $this->table,
-            "method_l"  => $this->method == 0 ? "面价打折" : "吨价下浮",
-            "method"    => $this->method,
+            "method_l"  => $this->mode == 0 ? "面价打折" : "吨价下浮",
+            "method"    => $this->mode,
             "description"     => $this->buildField($this->columns),
             "field"     => json_decode($this->columns,true),
         ];
