@@ -166,6 +166,7 @@ return [
         //VueUEditor\Providers\UEditorServiceProvider::class,
         Maatwebsite\Excel\ExcelServiceProvider::class,
         Overtrue\LaravelPinyin\ServiceProvider::class,
+        Barryvdh\Snappy\ServiceProvider::class,
     ],
 
     /*

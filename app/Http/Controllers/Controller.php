@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Assistant;
 use JWTAuth;
 use Storage;
 use App\User;
@@ -117,7 +118,7 @@ class Controller extends BaseController
     {
         if ($this->isAdmin())
             return User::all()->pluck("name","id")->toArray();
-        if ($this->isManager())
+        else if ($this->isManager()||$this->isAssistant())
             return User::where(["department_id" => $this->getDepartId()])->pluck("name","id")->toArray();
         return [ $this->getUserId() => $this->getUser()->name];
     }
@@ -128,8 +129,16 @@ class Controller extends BaseController
         return (bool) User::find($userid)->group == 'admin';
     }
 
+    //判断助理
+    protected function isAssistant($userid = null)
+    {
+        if (!$userid)
+            $userid = $this->getUserId();
+        return (bool) Assistant::find($userid);
+    }
+
     /**
-     * 1、部门经理、助理 返回当前部门下所有用户的id
+     * 部门经理、助理 返回当前部门下所有用户的id
      */
     public function AuthIdList()
     {

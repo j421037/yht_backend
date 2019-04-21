@@ -7,6 +7,7 @@ use App\ProductsManager;
 use App\PriceVersion;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
+use App\Http\Controllers\Traits\CostModule;
 use App\Http\Requests\ProductPriceListRequest;
 use Illuminate\Database\DatabaseManager;
 use App\Http\Requests\PriceVersionListRequest;
@@ -16,6 +17,7 @@ use App\Http\Requests\ProductPriceUpdateRequest;
 
 class ProductPriceController extends Controller
 {
+    use CostModule;
     /**
      * productManager model
      */
@@ -51,7 +53,7 @@ class ProductPriceController extends Controller
                         "data" => [
                             "id" => $row->id,
                             "column" => $this->getColumn($row->columns),
-                            "rows" => $this->getPriceData($row->table, $row->method,$this->groupField($row->columns))
+                            "rows" => $this->getPriceData($this->db,$row)
                             ]
                         ]);
     }
@@ -166,42 +168,6 @@ class ProductPriceController extends Controller
         return $column;
     }
 
-    private function groupField($json) :array
-    {
-        $column = [];
-        $arr = json_decode($json);
-
-        foreach ($arr as $v)
-        {
-            array_push($column,["label" => $v->description,"value" => $v->field]);
-        }
-
-        return $column;
-    }
-
-    /**
-     * price table data
-     *
-     * @param $table table name
-     *
-     * @return $data rows
-     */
-    private function getPriceData(string $table,int $method, array $groupFields) :array
-    {
-        $field = collect($groupFields)->pluck('value')->toArray();
-        $sql = "SELECT * FROM (SELECT * FROM {$table} ORDER BY `created_at` DESC LIMIT 0,99999999999) AS T0 GROUP BY ".implode(",",$field);
-        $data = $this->db->select($sql);
-
-        foreach ($data as $v)
-        {
-            if ($method == 0)
-                $v->unit = "元/条";
-            else if ($method == 1)
-                $v->unit = "元/吨";
-        }
-
-        return (array) $data;
-    }
 
     /**
      * @params  $version [category, product_brand, date,version, atta_id]

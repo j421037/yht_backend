@@ -2,33 +2,125 @@
 
 namespace App\Http\Controllers;
 
+
 use App\User;
 use App\RealCustomer;
 use App\ProductCategory;
 use App\GeneralOffer;
+use App\ProductsManager;
+use Maatwebsite\Excel\Excel;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Database\DatabaseManager;
 use App\Http\Requests\OfferListRequest;
 use App\Http\Resources\OfferListResource;
+use Barryvdh\Snappy\PdfWrapper;
+use App\Http\Controllers\Traits\CostModule;
 use App\Http\Resources\MakeOfferParamsResource;
 use App\Http\Requests\ProductMakeOfferStoreRequest;
+use App\Http\Requests\ProductMakeOfferDownloadRequest;
 
 class ProductMakeOfferController extends Controller
 {
+    use CostModule;
+
     private $db;
     private $category;
     private $user;
     private $realCust;
     private $offers;
+    private $excel;
+    private $manager;
+    private $pdf;
 
-    public function __construct(DatabaseManager $db, ProductCategory $category, GeneralOffer $offers,User $user, RealCustomer $realCust)
+    public function __construct(
+        User $user,
+        DatabaseManager $db,
+        ProductCategory $category,
+        GeneralOffer $offers,
+        ProductsManager $manager,
+        RealCustomer $realCust,
+        Excel $excel,
+        PdfWrapper $pdf
+    )
     {
         $this->db = $db;
         $this->user=  $user;
         $this->offers = $offers;
         $this->category = $category;
         $this->realCust = $realCust;
+        $this->excel = $excel;
+        $this->pdf = $pdf;
+        $this->manager = $manager;
+    }
+
+    /**
+     * download the pdf
+     */
+    public function DownloadPDF(ProductMakeOfferDownloadRequest $request)
+    {
+        return $this->pdf->loadView("MakeOffer",$this->MakePDF($request->offer_id))->download("offer.pdf");
+    }
+
+    /**
+     * view the pdf
+     */
+    public function ViewPDF(ProductMakeOfferDownloadRequest $request)
+    {
+        return view("MakeOffer",$this->MakePDF($request->offer_id));
+    }
+    /**
+     * PDF
+     */
+    private function MakePDF( int $offer_id) :array
+    {
+        $offer = $this->offers->find($offer_id);
+        $manager = $this->manager->find($offer->product_brand_id);
+        $offer->brand_name = $manager->brand_name;
+        $offer->category_name = $this->category->find($manager->category_id)->name;
+        $offer->unit = $manager->method == 0 ? "条" : "吨";
+        //$rows = collect($this->getPriceData($this->db, $manager->table, $manager->method, $manager->columns));
+        $columns = json_decode($manager->columns);
+        $fields = new \StdClass;
+
+        foreach ($columns as $k => $v)
+        {
+            $fields->{$v->field} = $v->description;
+        }
+
+        $offer->rows = $this->Calculation($manager,$offer->operate, $offer->operate_val);
+
+        return ["offers" => $offer, "fields" => $fields];
+    }
+
+    /**
+     * Calculation price
+     */
+    private function Calculation(ProductsManager $manager,string $operate, float $val)
+    {
+        switch($operate)
+        {
+            case 1:
+                $bcName = "bcmul";
+                break;
+            case 2:
+                $bcName = "bcdiv";
+                break;
+            case 3:
+                $bcName = "bcadd";
+                break;
+            case 4:
+                $bcName = "bcsub";
+                break;
+            default:
+                $bcName = "bcadd";
+        }
+        $rows = $this->getPriceData($this->db, $manager);
+        array_walk($rows, function(&$item) use ($bcName,$val) {
+            $item->price = $bcName($val,$item->price,2);
+        });
+
+        return collect($rows);
     }
 
     /**

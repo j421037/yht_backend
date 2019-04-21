@@ -97,6 +97,7 @@ Route::group(['middleware' => 'refresh.token'], function () {
         Route::post('department/get/users', 'DepartmentController@user');
         Route::post('department/put/users', 'DepartmentController@updateUser');
         Route::post('department/put/manager', 'DepartmentController@manager');
+        Route::post("department/put/assistant", "DepartmentController@SaveAssistant");
         /**企业微信管理**/
         Route::post('wechat/post/chat', 'WechatController@storeChat');
         /*** 外部客户注入****************************/
@@ -238,6 +239,7 @@ Route::group(['middleware' => 'refresh.token'], function () {
         Route::post("products/prices/update", "ProductPriceController@update");
         Route::post("products/prices/fastupdate","ProductPriceController@FastUpdate");
         Route::post("products/prices/version","ProductPriceController@PriceVersionList");
+        Route::post("cost/role","CostController@rule");
         /**单品牌报价**/
         Route::post("products/params","ProductMakeOfferController@params");
         Route::post("products/offers","ProductMakeOfferController@OfferList");

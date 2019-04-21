@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Assistant;
 use Auth;
 use App\User;
 use App\Department;
@@ -125,5 +126,37 @@ class DepartmentController extends Controller
     		return response(['status' => 'fail', 'error' => $e->getMessage() ], 200);	
     	}
     	
+    }
+
+    /**
+     * 部门助理
+     */
+    public function SaveAssistant(Request $request)
+    {
+        $department = Department::find($request->department_id);
+        $users = User::whereIn("id",$request->users)->get();
+
+        foreach ($users as $user)
+        {
+            Assistant::firstOrCreate(
+                    ["department_id" => $department->id,"user_id" => $user->id],
+                    [
+                        "department"    => $department->name,
+                        "department_id" => $department->id,
+                        "user_id"       => $user->id,
+                        "name"          => $user->name
+                    ]
+                );
+        }
+
+        $assistants = Assistant::where(["department_id" => $department->id])->get();
+
+        foreach ($assistants as $assistant)
+        {
+            if (!in_array($assistant->user_id,$request->users))
+                $assistant->delete();
+        }
+
+        return response(["status" => "success"], 200);
     }
 }
