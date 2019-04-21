@@ -18,6 +18,7 @@ use Barryvdh\Snappy\PdfWrapper;
 use App\Http\Controllers\Traits\CostModule;
 use App\Http\Resources\MakeOfferParamsResource;
 use App\Http\Requests\ProductMakeOfferStoreRequest;
+use App\Http\Requests\ProductMakeOfferModifyRequest;
 use App\Http\Requests\ProductMakeOfferDownloadRequest;
 
 class ProductMakeOfferController extends Controller
@@ -98,23 +99,7 @@ class ProductMakeOfferController extends Controller
      */
     private function Calculation(ProductsManager $manager,string $operate, float $val)
     {
-        switch($operate)
-        {
-            case 1:
-                $bcName = "bcmul";
-                break;
-            case 2:
-                $bcName = "bcdiv";
-                break;
-            case 3:
-                $bcName = "bcadd";
-                break;
-            case 4:
-                $bcName = "bcsub";
-                break;
-            default:
-                $bcName = "bcadd";
-        }
+        $bcName = $this->MakeOperatorName($operate);
         $rows = $this->getPriceData($this->db, $manager);
         array_walk($rows, function(&$item) use ($bcName,$val) {
             $item->price = $bcName($val,$item->price,2);
@@ -174,6 +159,24 @@ class ProductMakeOfferController extends Controller
     }
 
     /**
+     * update offer
+     **/
+    public function modify(ProductMakeOfferModifyRequest $request)
+    {
+        $offer = $this->offers->find($request->id);
+        $offer->operate = $request->operate;
+        $offer->operate_val = $request->operate_val;
+
+        try {
+            if ($offer->save())
+                return response(["status" => "success"],200);
+        }
+        catch (QueryException $e) {
+            return response(["status" => "error" ,"errmsg" => "更新失败"], 200);
+        }
+    }
+
+    /**
      * all offer
      */
     public function OfferList(OfferListRequest $request)
@@ -182,5 +185,30 @@ class ProductMakeOfferController extends Controller
         $rows = $this->offers->whereIn("creator_id",$ids)->orWhereIn("serviceor_id", $ids)->get();
 
         return response(["status" => "success", "data" => OfferListResource::collection($rows)],200);
+    }
+
+    /**
+     * offer operate name
+     */
+    protected function MakeOperatorName($num) :string
+    {
+        switch ($num) {
+            case 1: //x
+                $bcName = "bcmul";
+                break;
+            case 2:// /
+                $bcName = "bcdiv";
+                break;
+            case 3://+
+                $bcName = "bcadd";
+                break;
+            case 4: // -
+                $bcName = "bcsub";
+                break;
+            default:
+                $bcName = "bcadd";
+        }
+
+        return $bcName;
     }
 }

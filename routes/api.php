@@ -244,6 +244,7 @@ Route::group(['middleware' => 'refresh.token'], function () {
         Route::post("products/params","ProductMakeOfferController@params");
         Route::post("products/offers","ProductMakeOfferController@OfferList");
         Route::post("products/offer/store", "ProductMakeOfferController@store");
+        Route::post("products/offer/modify", "ProductMakeOfferController@modify");
     });
     /**不需要验证权限**/
     Route::post('bindattr/one', 'BindAttrController@one');
