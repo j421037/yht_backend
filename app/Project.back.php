@@ -25,15 +25,10 @@ class Project extends Model
         'affiliate',
         'estimate',
         'phone_num',
-        'agreement',
-		'created_month',
-        'created_year',
-        'brand',
-        'type',
-        'addr',
-        'remark',
-        'start_at',
-        'finish_at'
+        "agreement",
+        "payment_start_date",
+        "last_payment_date",
+        "isclose"
     ];
 
 
@@ -423,7 +418,8 @@ class Project extends Model
         $row = DB::select($sql);
         $total = DB::select($countSql);
 
-        return ['row' => $row, 'total' => $total[0]->total, 'sql' => $sql];
+        return ['row' => $row, 'total' => $total[0]->total];
     }
+
 
 }

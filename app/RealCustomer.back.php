@@ -17,19 +17,7 @@ class RealCustomer extends Model
     	'name',
     	'user_id',
         'status',
-        'pid',
-    	'work_scope',
-        'project_type',
-		'attached',
-    	'tags',
-        'contract',
-		'account period',
-    	'tax',
-        'coop',
-    	'track',
-        'type',
-		'phone'
-    	
+        // 'type'
     ];
 
     public function project()

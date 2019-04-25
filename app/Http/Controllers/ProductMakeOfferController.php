@@ -79,14 +79,24 @@ class ProductMakeOfferController extends Controller
         $manager = $this->manager->find($offer->product_brand_id);
         $offer->brand_name = $manager->brand_name;
         $offer->category_name = $this->category->find($manager->category_id)->name;
-        $offer->unit = $manager->method == 0 ? "条" : "吨";
-        //$rows = collect($this->getPriceData($this->db, $manager->table, $manager->method, $manager->columns));
         $columns = json_decode($manager->columns);
         $fields = new \StdClass;
 
         foreach ($columns as $k => $v)
         {
             $fields->{$v->field} = $v->description;
+        }
+
+        if ($manager->method == 0)
+        {
+            $offer->unit = "条";
+            /**
+             *百分比打折
+             */
+            $offer->operate_val = bcdiv($offer->operate_val, 100,2);
+        }
+        else {
+            $offer->unit = "吨";
         }
 
         $offer->rows = $this->Calculation($manager,$offer->operate, $offer->operate_val);

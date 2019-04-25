@@ -10,7 +10,7 @@
 |
 */
 
-Route::get('/', function() {return 77;});
+Route::get('/', function() {return null;});
 Route::get('/article','ArticleController@test');
 
 /**微信登录**/

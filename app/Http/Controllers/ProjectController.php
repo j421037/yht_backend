@@ -8,16 +8,26 @@ use App\Project;
 use App\Attachment;
 use Illuminate\Http\Request;
 use Illuminate\Database\QueryException;
-use App\Http\Requests\ProjectStoreRequest;
+use App\Http\Requests\ProjectAddRequest;
 use App\Http\Resources\ProjectQueryResource;
+use App\Http\Resources\ProjectResource;
+use Illuminate\Filesystem\FilesystemManager;
 
 class ProjectController extends Controller
 {
+	protected $model;
+    protected $filesystem;
+
+    public function __construct(Attachment $atta, FilesystemManager $filesystemManager)
+    {
+        $this->model = $atta;
+        $this->filesystem = $filesystemManager;
+    }
+	
     public function store(Request $request)
     {
     	$data = $request->all();
-    	$data['user_id'] = $this->getUserId();
-    	$data["payment_start_date"] = strtotime($data["payment_start_date"]);
+    	$data['user_id'] = Auth::user()->id;
        
         try {
            
@@ -67,5 +77,100 @@ class ProjectController extends Controller
 	    }
 
     	return response(['data' => $list], 200);
+    }
+	
+	public function all(Request $request)
+    {
+        $limit = $request->limit ?? 5;
+		$offset = (intval($request->pagenow) - 1 ) * $limit;
+        try {
+			$model = Project::whereIN('user_id', array_keys($this->UserAuthorizeCollects()))
+					->offset($offset)
+					->limit($limit)
+					->orderBy('id', 'desc');
+
+			$list = $model->get();
+			$total = count(Project::whereIN('user_id', array_keys($this->UserAuthorizeCollects()))->get());
+			return response(['row' => ProjectResource::collection($list), 'total' => $total], 200);
+				
+		} catch (QueryException $e) {
+            return response(['status' => 'error', 'errmsg' => $e->getMessage()]);
+        }
+    }
+	
+	//搜索项目提示
+	public function getProjectBySearch(Request $request)
+	{
+		try {
+			if ($request->keyword != '') {
+
+				$list = Project::where('name','like','%'.trim($request->keyword).'%')->get();
+				if ($list) {
+					return response(['row' => ProjectResource::collection($list)], 200);
+				} else {
+					return null;
+				}
+			}		
+            
+        }
+        catch (QueryException $e) { 
+            return response(['status' => 'error', 'errmsg' => $e->getMessage()]);
+        }
+	}
+	
+	/**新建项目**/
+    public function add(ProjectAddRequest $request)
+    {
+    	$data = $request->all();
+        $data['user_id'] = $this->getUserId();
+
+    	try {
+			if (Project::where(['name' => $request->name])->first()) {
+				return response(['status' => 'error', 'errmsg' => '项目已存在'], 200);
+			}
+
+            $result = Project::create($data);
+
+    		if ($result) {
+    			return response(['status' => 'success', 'id' => $result->id], 200);
+    		}
+
+    	} catch (\Illuminate\Database\QueryException $e) {
+
+    		$msg = $e->getMessage();
+
+    		return response(['status' => 'error', 'errmsg' => $msg], 200);
+    	}
+    }
+	
+	/**
+    * 文件上传
+     */
+    public function upload(Request $request)
+    {
+        $Finfo = new \Finfo(FILEINFO_MIME);
+
+        if ($file = $request->uploadfile) {
+            $path = $this->filesystem->disk('public')->putFile('attachment/'.date('Y-m-d', time()), $file);
+
+            $data = [];
+            $data['path'] = $path;
+            $data['name'] = $file->getClientOriginalName();
+            $data['key'] = md5(uniqid());
+            $data['mime'] = $Finfo->file(storage_path('app/public/'.$path));
+
+            try {
+                if ($model = $this->model->create($data)) {
+                    return response(['status' => 'success','link' => env('APP_URL').'/index.php/file/download/'.$data['key'],'path' => $path, 'id' => $model->id], 201);
+                }
+            }
+            catch (QueryException $e) {
+                return response(['status' => 'error','errcode' => $e->getCode(), 'errmsg' => '文件上传失败']);
+            }
+
+        }
+        else {
+            return response(['status' => 'error','errmsg' => '上传文件不能为空']);
+        }
     }
 }

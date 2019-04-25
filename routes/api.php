@@ -274,3 +274,25 @@ Route::post('base/pagination', 'BaseDataController@pagination');
 Route::post('out/initCapt', 'OutCustomerController@initCapt');
 Route::post('out/auth/login', 'AuthController@OutLogin');
 Route::post('out/auth/signup', 'AuthController@OutSign');
+/***外包***/
+//首页
+Route::get('index/data', 'IndexController@getData');
+Route::post('index/sales', 'IndexController@getSales');
+Route::post('index/received', 'IndexController@getReceived');
+Route::post('index/debt', 'IndexController@getDebt');
+
+Route::post('index/user', 'Controller@UserAuthorizeCollects');
+
+//项目管理
+Route::post('realcustomer/all', 'RealCustomerController@all');
+Route::post('realcustomer/project', 'RealCustomerController@getProject');
+Route::post('realcustomer/enum', 'RealCustomerController@getEnum');
+Route::post('realcustomer/track', 'RealCustomerController@getTrack');
+Route::post('realcustomer/tag', 'RealCustomerController@getTag');
+Route::post('realcustomer/info', 'RealCustomerController@getInfo');
+Route::post('realcustomer/add', 'RealCustomerController@add');
+Route::post('realcustomer/search', 'RealCustomerController@search');
+Route::post('project/all', 'ProjectController@all');
+Route::post('project/add', 'ProjectController@add');
+Route::post('project/upload', 'ProjectController@upload');
+Route::post('project/projectBySearch', 'ProjectController@getProjectBySearch');

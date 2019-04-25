@@ -16,21 +16,12 @@ use App\AReceivable;
 use App\BindAttr;
 use App\Enumberate;
 use App\EnumberateItem;
-use App\CustomerTrack;
-use App\CustomerTag;
-use App\CustomerRecord;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\ARSumController;
 use App\Http\Requests\RealCustomerAddRequest;
-use App\Http\Requests\RealCustomerRequest;
 use Illuminate\Database\QueryException;
 use App\Http\Resources\RealCustomerQueryResource;
-use App\Http\Resources\ProjectResource;
-use App\Http\Resources\RealCustomerResource;
-use App\Http\Resources\CustomerTrackResource;
-use App\Http\Resources\CustomerTagResource;
-use App\Http\Resources\CustomerRecordResource;
 
 class RealCustomerController extends Controller 
 {
@@ -53,7 +44,7 @@ class RealCustomerController extends Controller
     public function store(RealCustomerAddRequest $request)
     {
     	$data = $request->all();
-        $data['user_id'] = Auth::user()->id;
+        $data['user_id'] = $this->getUserId();
 
     	try {
 
@@ -75,7 +66,7 @@ class RealCustomerController extends Controller
     		$msg = $e->getMessage();
 
     		if ($e->getCode() == 23000) {
-    			$msg = '该客户已存在!';
+    			$msg = '创建失败，请联系管理员';
     		}
 
     		return response(['status' => 'error', 'errmsg' => $msg], 200);
@@ -277,164 +268,5 @@ class RealCustomerController extends Controller
         $data = Excel::selectSheetsByIndex(1)->load($realpath, 'UTF-8')->get(['name']);
 
         return count($data);
-    }
-	
-	//获取枚举值
-	public function getEnum(Request $request)
-	{
-		
-		try {
-			if ($id = Enumberate::where(['name' => $request->value])->first()->id) {
-				return EnumberateItem::where(['eid' => $id])->get();
-			}
-			
-        }
-        catch (QueryException $e) { 
-            return response(['status' => 'error', 'errmsg' => $e->getMessage()]);
-        }
-	}
-	
-	//项目详情
-	public function getProject(Request $request)
-	{
-		try {
-
-			$list = Project::where(['id' => $request->pid])->get();
-			$customer = RealCustomer::where(['pid' => $request->pid])->get();
-            //return response(['row' => ProjectResource::collection($list), 'customer' => RealCustomerResource::collection($customer)], 200);
-            return response(['row' => ProjectResource::collection($list), 'customer' => $customer], 200);
-        }
-        catch (QueryException $e) { 
-            return response(['status' => 'error', 'errmsg' => $e->getMessage()]);
-        }
-	}
-
-    public function all(Request $request)
-    {
-        $limit = $request->limit ?? 5;
-		$offset = (intval($request->pagenow) - 1 ) * $limit;
-		$type = $request->type ?? 0;
-        try {
-			if($type == 0){
-				$model = RealCustomer::whereIN('user_id', array_keys($this->UserAuthorizeCollects()))
-						->offset($offset)
-						->limit($limit)
-						->orderBy('id', 'desc');
-
-				$list = $model->get();
-				$total = count( RealCustomer::whereIN('user_id', array_keys($this->UserAuthorizeCollects()))->get());
-				
-
-				
-			} else {
-				$limit = intVal($request->pagesize);
-				$offset = (intval($request->pagenow) - 1 ) * $limit;
-
-				$model = RealCustomer::where(['type' => $type])->whereIN('user_id', array_keys($this->UserAuthorizeCollects()))
-						->offset($offset)
-						->limit($limit)
-						->orderBy('id', 'desc');
-
-				$list = $model->get();
-				$total = count( RealCustomer::where(['type' => $type])->whereIN('user_id', array_keys($this->UserAuthorizeCollects()))->get());
-				
-			}
-
-            return response(['row' => RealCustomerResource::collection($list), 'total' => $total], 200);
-        }
-        catch (QueryException $e) {
-            return response(['status' => 'error', 'errmsg' => $e->getMessage()]);
-        }
-    }
-	
-	//项目详情
-	public function getProjects(Request $request)
-	{
-		try {
-
-			$list = Project::where(['cust_id' => $request->id])->get();
-            return response(['row' => ProjectResource::collection($list)], 200);
-        }
-        catch (QueryException $e) { 
-            return response(['status' => 'error', 'errmsg' => $e->getMessage()]);
-        }
-	}
-	
-	/**新建客户**/
-    public function add(RealCustomerRequest $request)
-    {
-    	$data = $request->all();
-        $data['user_id'] = $this->getUserId();
-
-    	try {
-			
-			if (RealCustomer::where(['name' => $request->name, 'phone' => $request->phone])->first()) {
-				return response(['status' => 'error', 'errmsg' => '客户已存在'], 200);
-			}
-
-            $result = RealCustomer::create($data);
-
-    		if ($result) {
-    			return response(['status' => 'success', 'id' => $result->id], 201);
-    		}
-
-    	} catch (\Illuminate\Database\QueryException $e) {
-
-    		$msg = $e->getMessage();
-
-    		return response(['status' => 'error', 'errmsg' => $msg], 200);
-    	}
-    }
-	
-	//动态跟踪
-	public function getInfo(Request $request)
-	{
-		try {
-			$list = RealCustomer::where(['id' => $request->id])->get();
-			
-            return response(['row' => RealCustomerResource::collection($list)], 200);
-        }
-        catch (QueryException $e) { 
-            return response(['status' => 'error', 'errmsg' => $e->getMessage()]);
-        }
-	}
-	
-	//动态跟踪
-	public function getTrack(Request $request)
-	{
-		try {
-			$list = CustomerTrack::where(['cust_id' => $request->cust_id])->get();
-			
-            return response(['row' => CustomerTrackResource::collection($list)], 200);
-        }
-        catch (QueryException $e) { 
-            return response(['status' => 'error', 'errmsg' => $e->getMessage()]);
-        }
-	}
-	
-	//标签
-	public function getTag(Request $request)
-	{
-		try {
-
-			$list = CustomerTag::where(['cust_id' => $request->cust_id])->get();
-			$record = CustomerRecord::where(['cust_id' => $request->cust_id])->get();
-            return response(['row' => CustomerTagResource::collection($list), 'customer' => CustomerRecordResource::collection($record)], 200);
-        }
-        catch (QueryException $e) { 
-            return response(['status' => 'error', 'errmsg' => $e->getMessage()]);
-        }
-	}
-	
-	/**查询客户**/
-    public function search(Request $request) 
-    {	
-
-    	if ($request->keyword != '') {
-
-            $list = Project::where('name','like','%'.trim($request->keyword).'%')->get();
-	    	$list = ProjectResource::collection($list);
-	    }
-		return response(['data' => $list], 200);
     }
 }
