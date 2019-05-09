@@ -114,13 +114,18 @@ class Controller extends BaseController
         return false;
     }
 
-    public function UserAuthorizeCollects() : array
+    protected function UserAuthorizeCollects() : array
     {
         if ($this->isAdmin())
             return User::all()->pluck("name","id")->toArray();
         else if ($this->isManager()||$this->isAssistant())
             return User::where(["department_id" => $this->getDepartId()])->pluck("name","id")->toArray();
         return [ $this->getUserId() => $this->getUser()->name];
+    }
+
+    protected function UserAuthorizeIds():array
+    {
+        return array_keys($this->UserAuthorizeCollects());
     }
 
     //判断一个用户是不是admin

@@ -21,9 +21,11 @@ use App\CustomerTag;
 use App\CustomerRecord;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use App\Http\Controllers\ARSumController;
 use App\Http\Requests\RealCustomerAddRequest;
 use App\Http\Requests\RealCustomerRequest;
+use App\Http\Requests\CustomerTrackRequest;
+use App\Http\Requests\CustomerTagRequest;
+use App\Http\Requests\CustomerRecordRequest;
 use Illuminate\Database\QueryException;
 use App\Http\Resources\RealCustomerQueryResource;
 use App\Http\Resources\ProjectResource;
@@ -259,30 +261,9 @@ class RealCustomerController extends Controller
         }
     }
 
-
-    public function Test(Request $request)
-    {
-        if (empty($request->file)) {
-            return;
-        }
-
-        $userid = Auth::user()->id;
-        $file = Storage::disk('local')->putFile('file/' . date('Y-m-d', time()), $request->file);
-
-        $realpath = storage_path('app/' . $file);
-
-        //$realpath = storage_path('app/template/template.xlsx');
-
-        //sheet1中存放合作客户的内容
-        $data = Excel::selectSheetsByIndex(1)->load($realpath, 'UTF-8')->get(['name']);
-
-        return count($data);
-    }
-	
 	//获取枚举值
 	public function getEnum(Request $request)
 	{
-		
 		try {
 			if ($id = Enumberate::where(['name' => $request->value])->first()->id) {
 				return EnumberateItem::where(['eid' => $id])->get();
@@ -302,7 +283,7 @@ class RealCustomerController extends Controller
 			$list = Project::where(['id' => $request->pid])->get();
 			$customer = RealCustomer::where(['pid' => $request->pid])->get();
             //return response(['row' => ProjectResource::collection($list), 'customer' => RealCustomerResource::collection($customer)], 200);
-            return response(['row' => ProjectResource::collection($list), 'customer' => $customer], 200);
+            return response(['row' => ProjectResource::collection($list), 'customer' => RealCustomerResource::collection($customer)], 200);
         }
         catch (QueryException $e) { 
             return response(['status' => 'error', 'errmsg' => $e->getMessage()]);
@@ -372,6 +353,10 @@ class RealCustomerController extends Controller
 				return response(['status' => 'error', 'errmsg' => '客户已存在'], 200);
 			}
 
+            if (RealCustomer::where(['name' => $request->name,'work_scope' => $request->work_scope, "pid" => $request->pid])->first()) {
+                return response(['status' => 'error', 'errmsg' => '施工范围客户已存在'], 200);
+            }
+
             $result = RealCustomer::create($data);
 
     		if ($result) {
@@ -384,6 +369,101 @@ class RealCustomerController extends Controller
 
     		return response(['status' => 'error', 'errmsg' => $msg], 200);
     	}
+    }
+	
+	/**新建标签**/
+    public function addTag(CustomerTagRequest $request)
+    {
+    	$data = $request->all();
+        $data['user_id'] = $this->getUserId();
+
+    	try {
+			
+            $result = CustomerTag::create($data);
+
+    		if ($result) {
+    			return response(['status' => 'success', 'id' => $result->id], 200);
+    		}
+
+    	} catch (\Illuminate\Database\QueryException $e) {
+
+    		$msg = $e->getMessage();
+
+    		return response(['status' => 'error', 'errmsg' => $msg], 200);
+    	}
+    }
+	
+	/**新建跟踪**/
+    public function addTrack(CustomerTrackRequest $request)
+    {
+    	$data = $request->all();
+        $data['user_id'] = $this->getUserId();
+
+    	try {
+			
+            $result = CustomerTrack::create($data);
+
+    		if ($result) {
+    			return response(['status' => 'success', 'id' => $result->id], 200);
+    		}
+
+    	} catch (\Illuminate\Database\QueryException $e) {
+
+    		$msg = $e->getMessage();
+
+    		return response(['status' => 'error', 'errmsg' => $msg], 200);
+    	}
+    }
+	
+	/**新建记录**/
+    public function addRecord(CustomerRecordRequest $request)
+    {
+    	$data = $request->all();
+        $data['user_id'] = $this->getUserId();
+
+    	try {
+			
+            $result = CustomerRecord::create($data);
+
+    		if ($result) {
+    			return response(['status' => 'success', 'id' => $result->id], 200);
+    		}
+
+    	} catch (\Illuminate\Database\QueryException $e) {
+
+    		$msg = $e->getMessage();
+
+    		return response(['status' => 'error', 'errmsg' => $msg], 200);
+    	}
+    }
+	
+	/**更新客户信息**/
+    public function updateInfo(Request $request)
+    {
+        $realCustomer = RealCustomer::find($request->id);
+        if (RealCustomer::where(['name' => $request->name, 'work_scope' => $request->work_scope])->first()) {
+            return response(['status' => 'error', 'errmsg' => '施工范围客户已存在'], 200);
+        }
+        try {
+            $realCustomer->name = trim($request->name);
+			$realCustomer->phone = trim($request->phone);
+			$realCustomer->work_scope = $request->work_scope;
+			$realCustomer->project_type = $request->project_type;
+			$realCustomer->attached = $request->attached;
+			$realCustomer->contract = $request->contract;
+			$realCustomer->account_period = $request->account_period;
+			$realCustomer->tax = trim($request->tax);
+			$realCustomer->coop = $request->coop;
+			$realCustomer->level = $request->level;
+
+
+            if ($realCustomer->save()) {
+                return response(['status' => 'success']);
+            }
+        }
+        catch (QueryException $e) {
+            return response(['status' => 'error', 'errmsg' => $e->getMessage()]);
+        }
     }
 	
 	//动态跟踪
@@ -419,12 +499,13 @@ class RealCustomerController extends Controller
 
 			$list = CustomerTag::where(['cust_id' => $request->cust_id])->get();
 			$record = CustomerRecord::where(['cust_id' => $request->cust_id])->get();
-            return response(['row' => CustomerTagResource::collection($list), 'customer' => CustomerRecordResource::collection($record)], 200);
+            return response(['tag' => CustomerTagResource::collection($list), 'record' => CustomerRecordResource::collection($record)], 200);
         }
         catch (QueryException $e) { 
             return response(['status' => 'error', 'errmsg' => $e->getMessage()]);
         }
 	}
+	
 	
 	/**查询客户**/
     public function search(Request $request) 
@@ -436,5 +517,16 @@ class RealCustomerController extends Controller
 	    	$list = ProjectResource::collection($list);
 	    }
 		return response(['data' => $list], 200);
+    }
+
+    /**查询客户**/
+    public function SearchCust(Request $request)
+    {
+        $list = [];
+        if ($request->keyword != '') {
+            $list = RealCustomer::where('name','like','%'.trim($request->keyword).'%')->get();
+        }
+
+        return response(["data" => $list], 200);
     }
 }

@@ -29,9 +29,9 @@ class ReceivableController extends Controller
 
         try {
 
-            $list = AReceivable::where(['pid' => $request->pid])->limit($limit)->offset($offset)->orderBy('date', 'desc')->get();
+            $list = AReceivable::where(['rid' => $request->rid])->limit($limit)->offset($offset)->orderBy('date', 'desc')->get();
 
-            $total = AReceivable::where(['pid' => $request->pid])->count();
+            $total = AReceivable::where(['rid' => $request->rid])->count();
 
             return response(['row' => ReceivableListResource::collection($list), 'total' => $total], 200);
         }
@@ -45,7 +45,7 @@ class ReceivableController extends Controller
     	$list = $request->all();
     	$list['date'] = strtotime($list['date']);
     	/**假如已经有期初 则不能新建期初应收单**/
-    	$receivable = AReceivable::where(['pid' => $request->pid, 'is_init' => 1])->first();
+    	$receivable = AReceivable::where(['rid' => $request->rid, 'is_init' => 1])->first();
 
     	if ($receivable) {
     		$list['is_init'] = 0;
@@ -54,7 +54,7 @@ class ReceivableController extends Controller
     	try {
     		if ($result = AReceivable::create($list)) {
 
-                Event::fire(new ARLogEvent(Auth::user()->id, $result->id, 'create', 'AReceivable', $result->amountfor, $result->amountfor));
+                Event::fire(new ARLogEvent($this->getUserId(), $result->id, 'create', 'AReceivable', $result->amountfor, $result->amountfor));
 
     			return response(['status' => 'success'], 200);
     		}

@@ -97,8 +97,8 @@ class RefundController extends Controller
     {
         $this->_set('limit', $request->limit);
         $this->_set('offset', $request->offset);
-        $this->row = Refund::where(['pid' => $request->pid])->limit($this->limit)->offset($this->offset)->orderBy('date', 'desc')->get();
-        $this->total = Refund::where(['pid' => $request->pid])->count();
+        $this->row = Refund::where(['rid' => $request->rid])->limit($this->limit)->offset($this->offset)->orderBy('date', 'desc')->get();
+        $this->total = Refund::where(['rid' => $request->rid])->count();
 
         return response(['row' => RefoundResource::collection($this->row), 'total' => $this->total], 200);
     }

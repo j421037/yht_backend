@@ -13,6 +13,7 @@ use Illuminate\Database\DatabaseManager;
 use App\Http\Requests\PriceVersionListRequest;
 use App\Http\Requests\FastUpdateRequest;
 use App\Http\Resources\PriceVersionListResource;
+use App\Http\Resources\PriceTrackResouce;
 use App\Http\Requests\ProductPriceUpdateRequest;
 
 class ProductPriceController extends Controller
@@ -152,6 +153,26 @@ class ProductPriceController extends Controller
         $data = $this->priceVersion->where(["product_brand" => $request->product_brand])->orderBy("id","desc")->get();
         return response(["status" => "success", "data" => PriceVersionListResource::collection($data)], 200);
     }
+
+    /**
+     * price change history
+     **/
+    public function PriceTrack(Request $request)
+    {
+        $where = [];
+        if (isset($request->category) && is_numeric($request->category))
+        {
+            $where["category"] = $request->category;
+        }
+        if (isset($request->product_brand) && is_numeric($request->product_brand))
+        {
+            $where["product_brand"] = $request->product_brand;
+        }
+
+        $list = $this->priceVersion->where($where)->orderBy("date","desc")->get();
+        return response(["status" => "success", "data" => PriceTrackResouce::collection($list)], 200);
+    }
+
     /**
      * price table column
      *

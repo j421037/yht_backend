@@ -28,7 +28,7 @@ class ProductMakeOfferStoreRequest extends FormRequest
             "serviceor_id"      => "required|numeric",
             "customer_id"       => "required|numeric",
             "operate"           => "required|numeric",
-            "operate_var"       => "required|numeric",
+            "operate_val"       => "required|numeric",
             "product_brand_id"  => "required|numeric",
             "version_id"        => "required|numeric",
             "products"          => "required|array"
@@ -42,7 +42,7 @@ class ProductMakeOfferStoreRequest extends FormRequest
             "serviceor_id.numeric"  => "非法的类型",
             "customer_id.required"  => "请选择客户",
             "operate.required"      => "请选择操作的方向",
-            "operate_var.required"  => "请输入操作的值",
+            "operate_val.required"  => "请输入操作的值",
             "product_brand_id.required" => "请选择品牌",
             "version_id.required"   => "请选择价格版本",
             "products.required"     => "请选择产品规格"

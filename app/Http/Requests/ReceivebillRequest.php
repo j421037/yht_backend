@@ -24,8 +24,8 @@ class ReceivebillRequest extends FormRequest
     public function rules()
     {
         return [
-            'cust_id'   => 'required|numeric',
-            'pid'       => 'required|numeric',
+            'id'   => '',
+            'rid'       => 'required|numeric',
             'amountfor' => 'required|numeric',
             'date'      => 'required|string',
             'discount'  => 'required|numeric',

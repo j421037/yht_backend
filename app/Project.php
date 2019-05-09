@@ -31,9 +31,11 @@ class Project extends Model
         'brand',
         'type',
         'addr',
+		'addr_detail',
         'remark',
         'start_at',
-        'finish_at'
+        'finish_at',
+		'area'
     ];
 
 

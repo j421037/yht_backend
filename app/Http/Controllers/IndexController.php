@@ -20,18 +20,32 @@ use App\Exceptions\UserAuthorizationException;
 
 class IndexController extends Controller
 {
-	
-	
-	//基本信息
+    protected $indexStatis;
+	public function __construct(IndexStatistics $index)
+    {
+        $this->indexStatis = $index;
+    }
+
+    //基本信息
 	public function getData()
 	{
 		try {
+            $row = $this->indexStatis->where(["user_id" => $this->getUserId()])->first();
+
+		    if (!$row)
+            {
+                //创建一条自己的记录
+                $model = $this->indexStatis->newInstance();
+                $model->user_id = $this->getUserId();
+                $model->save();
+            }
+
 			$list = IndexStatistics::whereIN('user_id', array_keys($this->UserAuthorizeCollects()))->get();
 			
-			$target = 66666;
-			$completed = 43960;
-			$debt = 2800;
-			$debt_percent = 30;
+			$target = 0;
+			$completed = 0;
+			$debt = 0;
+			$debt_percent = 0;
 			$target_client = 0;
 			$report_client = 0;
 			$coop_client = 0;

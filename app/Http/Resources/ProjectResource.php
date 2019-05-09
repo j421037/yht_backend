@@ -24,7 +24,7 @@ class ProjectResource extends JsonResource
             'cust_id'        		=> $this->cust_id,
             'user_id'           	=> $this->user_id,
 			'user_name'           	=> $this->_user($this->user_id),
-			'phone_num'				=> $this->phone_num,
+			//'phone'				    => $this->phone,
 			'tag'					=> $this->tag,
 			'attachment_id'			=> $this->attachment_id,
 			'tax'               	=> $this->tax,
@@ -52,7 +52,9 @@ class ProjectResource extends JsonResource
 			'track'					=> $this->_track($this->id),
             'status'				=> $this->status,
 			'addr'					=> $this->addr,
-			'addr_detail'			=> $this->addr_detail
+			'addr_detail'			=> $this->addr_detail,
+            "remark"                => $this->remark,
+            "aa"        => "aa"
         ];
     }
 	

@@ -194,11 +194,11 @@ Route::group(['middleware' => 'refresh.token'], function () {
         Route::post('refund/update', 'RefundController@update');
         /**数据汇总查询**/
         Route::post('arsum/query', 'ARSumController@query');
-        Route::post('arsum/role', 'ARSumController@role');
+        Route::post('arsum/role', 'ARSumController1@role');
         Route::post('artype/store', 'ArTypeController@store');
         Route::post('artype/index', 'ArTypeController@index');
         //同步金蝶销售订单
-        Route::post('arsum/sync_kingdee', "ARSumController@SyncKingdeeSaleOrder");
+        //Route::post('arsum/sync_kingdee', "ARSumController1@SyncKingdeeSaleOrder");
         /**应收表头**/
         Route::post('arsum/filter', 'ARSumFilterController@ARSumFilterTable');
         Route::post('arsum/filter/query', 'ARSumFilterController@FieldQuery');
@@ -227,7 +227,7 @@ Route::group(['middleware' => 'refresh.token'], function () {
         Route::post('bindattr/update', 'BindAttrController@update');
 
         /**调试初始化应收数据**/
-        Route::post('arsum/initialization', 'ARSumController@initialization');
+        Route::post('arsum/initialization', 'ARSumController1@initialization');
 
         /**产品管理**/
         Route::post("products/store", "ProductCategoryController@store");
@@ -239,6 +239,7 @@ Route::group(['middleware' => 'refresh.token'], function () {
         Route::post("products/prices/update", "ProductPriceController@update");
         Route::post("products/prices/fastupdate","ProductPriceController@FastUpdate");
         Route::post("products/prices/version","ProductPriceController@PriceVersionList");
+        Route::post("products/prices/info", "ProductPriceController@PriceTrack");
         Route::post("cost/role","CostController@rule");
         /**单品牌报价**/
         Route::post("products/params","ProductMakeOfferController@params");
@@ -291,7 +292,13 @@ Route::post('realcustomer/track', 'RealCustomerController@getTrack');
 Route::post('realcustomer/tag', 'RealCustomerController@getTag');
 Route::post('realcustomer/info', 'RealCustomerController@getInfo');
 Route::post('realcustomer/add', 'RealCustomerController@add');
+Route::post('realcustomer/updateInfo', 'RealCustomerController@updateInfo');
 Route::post('realcustomer/search', 'RealCustomerController@search');
+Route::post("realcustomer/searchcust","RealCustomerController@SearchCust");
+Route::post('realcustomer/addTrack', 'RealCustomerController@addTrack');
+Route::post('realcustomer/addRecord', 'RealCustomerController@addRecord');
+Route::post('realcustomer/addTag', 'RealCustomerController@addTag');
+
 Route::post('project/all', 'ProjectController@all');
 Route::post('project/add', 'ProjectController@add');
 Route::post('project/upload', 'ProjectController@upload');

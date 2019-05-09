@@ -12,7 +12,8 @@ class CustomerRecord extends Model
     	'groups',
 		'num',
 		'remark',
-    	'addtime'
+    	'addtime',
+        "user_id"
     ];
 
 }

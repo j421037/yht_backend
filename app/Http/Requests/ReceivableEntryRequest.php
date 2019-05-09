@@ -24,8 +24,8 @@ class ReceivableEntryRequest extends FormRequest
     public function rules()
     {
         return [
-            'cust_id'   => 'required|numeric',
-            'pid'       => 'required|numeric',
+            "id"    => "",
+            'rid'       => 'required|numeric',
             'is_init'    => 'required|numeric',
             'amountfor' => 'required|numeric',
             'date'      => 'required',

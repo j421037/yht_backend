@@ -8,5 +8,5 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class ReceivablePlan extends Model
 {
     use SoftDeletes;
-    protected $fillable = ['content','pid','user_id','date','week'];
+    protected $fillable = ['content','rid','user_id','date','week'];
 }

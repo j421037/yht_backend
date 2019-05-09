@@ -30,7 +30,7 @@ class ReceivebillController extends Controller
     	try {
     		if ($result = AReceivebill::create($list)) {
 
-                Event::fire(new ARLogEvent(Auth::user()->id, $result->id, 'create', 'AReceivebill', $result->amountfor, $result->amountfor));
+                Event::fire(new ARLogEvent($this->getUserId(), $result->id, 'create', 'AReceivebill', $result->amountfor, $result->amountfor));
 
     			return response(['status' => 'success'], 200);
     		}
@@ -53,7 +53,7 @@ class ReceivebillController extends Controller
     		if ($Receivebill->save()) {
 
                 Event::fire(new ARLogEvent(
-                            Auth::user()->id, 
+                            $this->getUserId(),
                             $Receivebill->id, 
                             'update', 
                             'AReceivebill', 
@@ -78,8 +78,8 @@ class ReceivebillController extends Controller
 
         try {
 
-            $list = AReceivebill::where(['pid' => $request->pid])->limit($limit)->offset($offset)->orderBy('date', 'desc')->get();
-            $total = AReceivebill::where(['pid' => $request->pid])->count();
+            $list = AReceivebill::where(['rid' => $request->rid])->limit($limit)->offset($offset)->orderBy('date', 'desc')->get();
+            $total = AReceivebill::where(['rid' => $request->rid])->count();
 
             return response(['row' => ReceivebillListResource::collection($list),'total' => $total], 200);
         } 

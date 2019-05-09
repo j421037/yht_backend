@@ -9,7 +9,7 @@ class Receivable extends Model
 {
     use SoftDeletes;
     protected $fillable = [
-    	'cust_id',
+    	'rid',
     	'amountfor',
     	'is_init',
     	'date',

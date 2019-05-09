@@ -10,7 +10,7 @@
 |
 */
 
-Route::get('/', function() {return null;});
+Route::get('/', function() { return "hello";});
 Route::get('/article','ArticleController@test');
 
 /**微信登录**/
@@ -23,7 +23,7 @@ Route::group(['middleware' => 'refresh.token'] ,function() {
     /**附件下载**/
     Route::get('file/download/{key}', 'AttachmentController@download');
     /**项目欠款信息导出**/
-    Route::get("report/arrears/{pid}","ARSumController@ExportProjectArrears");
+    Route::get("report/arrears/{pid}","ARSumController1@ExportProjectArrears");
     /**导出价格表**/
     Route::get("makeoffer/download/pdf","ProductMakeOfferController@DownloadPDF");
     Route::get("makeoffer/view/pdf","ProductMakeOfferController@ViewPDF");

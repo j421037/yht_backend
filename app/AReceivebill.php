@@ -10,8 +10,7 @@ class AReceivebill extends Model
 {
     use SoftDeletes;
     protected $fillable = [
-    	'cust_id',
-    	'pid',
+    	'rid',
     	'amountfor',
         'discount',
     	'date',

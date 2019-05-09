@@ -9,6 +9,7 @@ class CustomerTag extends Model
     protected $fillable = [
     	'id',
     	'cust_id',
+		'user_id',
     	'machine',
 		'num',
 		'remark',

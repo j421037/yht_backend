@@ -171,7 +171,7 @@ class ARSumFilterController extends Controller
             ),
             array(
                 'label' => '施工范围',
-                'value' => 'build',
+                'value' => 'work_scope',
                 'type'  => 'enumerate',
                 'attr'  => 'enumerate',
                 'list'  => ARSumFilterQueryResource::collection($this->GetEnumberItem('F_CMK_PROATTR'))

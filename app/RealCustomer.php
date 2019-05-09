@@ -23,12 +23,13 @@ class RealCustomer extends Model
 		'attached',
     	'tags',
         'contract',
-		'account period',
+		'account_period',
     	'tax',
         'coop',
     	'track',
         'type',
-		'phone'
+		'phone',
+		'level'
     	
     ];
 

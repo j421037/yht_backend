@@ -11,6 +11,6 @@ class Refund extends Model
     use SoftDeletes;
     //
     protected $fillable = [
-    	'id','pid','cust_id','refund','date','remark'
+    	'id','rid','refund','date','remark'
     ];
 }

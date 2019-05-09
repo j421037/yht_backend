@@ -1,268 +1,223 @@
 <?php
-/**
-* 应收款汇总
-* @author 2018-09-19
-* @date 10-29 改变需求
-*/
+
 namespace App\Http\Controllers;
 
-use App\Customer;
-use App\Role;
-use App\User;
-use App\Department;
-use App\RealCustomer;
 use App\AReceivebill;
+use App\ArrearsData;
 use App\AReceivable;
-use App\Project;
 use App\FilterProgram;
-use App\Exports\ARSumExport;
-use Maatwebsite\Excel\Facades\Excel;
-use Illuminate\Database\QueryException;
+use App\Refund;
 use Illuminate\Http\Request;
-use App\Http\Resources\ARSumResource;
-use App\Http\Resources\ARSumRoleResource;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Database\Eloquent\Collection;
 
 class ARSumController extends Controller
 {
     /**
-     * 返回客户+项目信息
-     * 默认情况下，个人返回自己创建的项目，部门经理、助理返回当前部门的项目； boss 返回全部的项目信息
+     * arrearData model
+     */
+    protected $arrearData;
+
+    /**
+     * FilterProgam model
+     */
+    protected $filter;
+
+    /**
+     * AReceivable model
+     */
+    protected $receivable;
+    protected $receivebill;
+    protected $refund;
+
+    /**
+     *  date
+     */
+    protected $year;
+    protected $year_t;
+    protected $month;
+    protected $month_i = [];
+    protected $month_section;
+
+    public function __construct(
+        ArrearsData $arrearsData,
+        FilterProgram $filter,
+        AReceivable $receivable,
+        AReceivebill $receivebill,
+        Refund $refund
+    )
+    {
+        $this->arrearData = $arrearsData;
+        $this->filter = $filter;
+        $this->receivable = $receivable;
+        $this->receivebill = $receivebill;
+        $this->refund = $refund;
+
+        $this->year = date("Y",time());
+        $this->month = date("m", time());
+        $this->year_t = strtotime($this->year."-01"."-01");
+
+        for($i = 1; $i <= $this->month; ++ $i) {
+            $this->month_i[$i] = 0;
+        }
+    }
+
+    /**
+     * query arrears
      */
     public function query(Request $request)
     {
-       // DB::enableQueryLog();
-        //第一次请求
-        $filter = FilterProgram::where(['default' => 1, 'user_id' => $this->getUserId()])->first();
+        $filter = $request->conf;
 
-        if ($request->initialization == true && isset($filter->conf) ) {
-            $filter = (object)json_decode($filter->conf, true);
+        if ($request->initialization == true) {
+
+            $filter = $this->filter->where(["default" => 1, "user_id" => $this->getUserId()])->first();
+
+            if (isset($filter->conf))
+                $filter = json_decode($filter->conf, true);
         }
-        //多次请求
+
+        if ($filter) {
+            $where = $this->where($filter);
+        }
         else {
-            $filter = (object) $request->conf;
+            $where = [];
         }
 
-        $AuthList = $this->AuthIdList();
-        $model = new Project();
-        $result = $model->ARSum($filter, $AuthList, $request->offset, $request->limit);
-        $count = $result['total'];
-        $data = $result['row'];
-        $year = date('Y', time());
-        $currentCid = 0;
-        $project = 0;
-        $tid = 0;
+        $model = $this->arrearData->where($where)->whereIn("user_id",$this->UserAuthorizeIds());
+        $rows = $model->orderBy("customer_name")->get();
+        $total = $model->count();
 
-        array_walk($data, function(&$item, $index) use (&$currentCid, &$project, &$tid, $year) {
+        $lastItem = new \StdClass;
 
-            if ($item->cid == $currentCid) {
+        $rows->map(function(&$item) use (&$lastItem) {
+
+            if (isset($lastItem->customer_name)
+                && $lastItem->customer_name == $item->customer_name) {
                 $item->nameshow = false;
             }
             else {
                 $item->nameshow = true;
-                $currentCid = $item->cid;
+                $lastItem = $item;
             }
 
-            if ($item->project == $project && $item->tid == $tid) {
-                $item->projectshow = false;
-            }
-            else {
-                $item->projectshow = true;
-                $project = $item->project;
-                $tid = $item->tid;
-            }
-
-            $item->year = $year;
-            $item->index = $index + 1;
+            $item->rowkey = $this->rowKey();
         });
 
-        $data = collect($data);
-
-        return response(['status' => 'success', 'data' => ARSumResource::collection($data), 'total' => $count], 200);
-    }
-
-    /**以项目为主体**/
-    public function query1(Request $request)
-    {
-
-    	$Project = new Project();
-
-    	$order = explode('_', $request->order);
-
-    	$ARSum = $Project->buildARSum($request);
-
-    	$result = collect($ARSum['data']);
-
-    	$list = ARSumResource::collection($result);
-
-        
-    	//按欠款月数倒序排序
-    	if (strtolower($order[0]) == 'months') {
-
-            $list = json_decode(json_encode(response($list)->getOriginalContent()),true);
-
-    		if (strtolower($order[1]) == 'desc') {
-
-	    		$list = collect($list)->sortByDesc('continueReceivable')->values()->all();
-
-	    	} else {
-                
-                $list = collect($list)->sortBy('continueReceivable')->values()->all();
-            }
-
-    	}
-
-    	$summaries = $ARSum['summaries'][0];
-    	$summaries->balance = number_format(bcsub(bcsub(bcsub($summaries->amountfor, $summaries->real_amountfor, 2),$summaries->discount, 2),$summaries->refund,2), 2);
-
-        $summaries->amountfor = number_format($summaries->amountfor,2);
-        $summaries->real_amountfor = number_format($summaries->real_amountfor,2);
-        $summaries->discount = number_format($summaries->discount, 2);
-        $summaries->refund = number_format($summaries->refund, 2);
-
-    	return response(['data' => $list, 'total' => $ARSum['total'], 'summaries' => $summaries], 200);
-    }
-
-    /**处理权限信息
-    * 如果是部门或者助理，则可以返回部门员工列表
-    * @param $flag 返回数组或response 
-    */
-    public function role()
-    {
-
-    	$userId = $this->getUserId();
-    	$userCollect = User::with(['role'])->where(['id' => $userId])->get();
-    	$user = $userCollect[0];
-    	$role = $user->role->pluck('name')->toArray();
-		$userList = $userCollect;
-		$hasRole = false;
-    	
-    	$department =  Department::where(['user_id' => $user->id])->first();
-    	//超级管理员
-    	if ( $user->group == 'admin' ) {
-
-    		$userList = User::all();
-    		$hasRole = true;
-
-            //部门助理
-    	}  else if ($department || in_array('部门助理', $role)) {
-
-    		$userList = User::where(['department_id' => $user->department_id])->get();
-    		$hasRole = true;
-    	}
-
-    	$list = ARSumRoleResource::collection($userList);
-        $result = ['user' => $list, 'hasRole' => $hasRole];
-
-        return response($result, 200);
-    }
-
-    /**调试的情况下清空表**/
-    public function initialization()
-    {
-        try {
-            $tables = ['a_receivables', 'a_receivebills', 'projects','real_customers', 'receivable_plans','refunds', 'potential_customers','potential_projects'];
-            foreach ($tables as $v) {
-                DB::select('truncate table '. $v);
-            }
-
-            return response(['status' => 'success'], 200);
-        }
-        catch (QueryException $e) {
-            return response(['status' => 'error', 'errmsg' => $e->getMessage()]);
-        }
-    }
-
-    //同步金蝶的销售订单
-    public function SyncKingdeeSaleOrder()
-    {
-        $url = "http://kingdee.miaoyi09.com/K3Cloud/YHT.WebAPI.ServiceExtend.ServicesStub.SaleOrderService.ExecuteBillQuery.common.kdsvc";
-        $params = [
-            'AcctId'    => "5c6f64cf1215e5", //账套ID 必须
-            "UserName"  => "kingdee",        //金蝶用户名 必须
-            "Password"  => "sb123.++",        // 金蝶用户名密码 必须
-            "PageSize"  => "10",
-            "PageNow"   => "1"
-        ];
-
-        $kingdee = $this->CURL($url, json_encode($params), "POST");
-
-        var_dump(json_decode($kingdee, true));
+        return response(["total" => $total,"data" => $rows,"result" => $this->sales($rows->pluck("id")->toArray())], 200);
     }
 
     /**
-     * 导出项目欠款信息
-     * 需要导出的内容：欠款金额
-     * @param $pid 项目id
-     * @return stream excel
+     * set where condition
      */
-    public function ExportProjectArrears(Request $request)
+    private function where(array $condition):array
     {
-        if ($request->get('pid'))
-            return "参数有误";
+        $arr = [];
 
-        $project = Project::find($request->pid);
-        $customer = RealCustomer::find($project->cust_id);
-        $sales = $this->ARBills(new AReceivable, $project->id)->toArray();
-        $payments = $this->ARBills(new AReceivebill, $project->id)->toArray();
-
-        $y = date("Y", time());//当前年
-        $m = date('m', time());//当前月
-        $begin = 0;
-        $collect = [];
-
-        //初始化今年的月份
-        for($i = 1; $i <= $m; ++$i)
-        {
-            $collect[$i] = new \StdClass;
-            $collect[$i]->year = $y;
-            $collect[$i]->month = $i;
-            $collect[$i]->begin = 0;
-            $collect[$i]->sales= 0;
-            $collect[$i]->payment = 0;
-            $collect[$i]->arrears = 0;
-            $collect[$i]->cust_name = $customer->name;
-            $collect[$i]->name = $project->name;
+        foreach ($condition as $v) {
+            array_push($arr,[$v["field"],$this->operatorMap[$v["operator"]], $v["value"] ]);
         }
 
-        array_walk($sales,function($item) use (&$y,&$collect,&$begin) {
-            $item = (object) $item;
-
-            if ($item->year < $y)
-            {
-                $begin += $item->amountfor;
-            }
-            else {
-                $collect[(int)$item->month]->sales += $item->amountfor;
-            }
-        });
-
-        array_walk($payments, function($item) use (&$y,&$collect, &$begin) {
-            $item = (object) $item;
-
-            if ($item->year < $y)
-            {
-                $begin -= $item->amountfor;
-            }
-            else {
-                $collect[(int)$item->month]->payment += $item->amountfor;
-            }
-        });
-
-        array_walk($collect, function(&$item) use (&$begin) {
-            $item->begin = $begin;
-            $item->arrears = bcadd(bcsub($item->sales, $item->payment),$item->begin);
-            $begin = $item->arrears;
-        });
-
-        return Excel::download(new ARSumExport($collect),date('Y-m-d', time()).'.xlsx');
+        return $arr;
     }
 
-    private function ARBills($model,$pid)
+    /**
+     * get sum of sales
+     *
+     * @param  $id row id
+     *
+     * @return array
+     */
+    private function sales(array $ids) : array
     {
-        return $model->where(['pid' => $pid])
-            ->selectRaw(" *, from_unixtime(date,'%Y') as `year`,from_unixtime(date,'%m') as `month` ")
-            ->orderBy("date","asc")
-            ->get();
+        $result = [];
+        $rows = $this->receivable->whereIn("rid",$ids)->get();
+
+        if ($rows) {
+            $rows = collect($rows)->groupBy("rid")->toArray();
+        }
+        else {
+            return $result;
+        }
+
+        foreach ($rows as $k => $v) {
+            $amount = $this->month_i;
+            $r = [];
+            $t = ["beginning" => 0,"rid" => $k, "amount" => $this->month_i];
+
+            array_walk($v,function($item) use (&$t,&$amount,&$r){
+
+                // accumulate beginning
+                if ($item["date"] <= $this->year_t) {
+                    $t["beginning"] = bcadd($t["beginning"],$item["amountfor"],3);
+                }
+                else {
+                    $i = date("m",$item["date"]);
+
+                    $amount[(int)$i] = bcadd($amount[(int)$i], $item["amountfor"], 3);
+                }
+
+                if ($item["is_init"] == 1 && count($r) < 1) {
+                    $r = $item;
+                }
+
+            });
+
+            //last year has data
+            if ($t["beginning"] > 0) {
+                $amount[1] += bcadd($t["beginning"], $amount[1], 3);
+            }
+            else {
+                if ($r) {
+                    $t["beginning"] = $r["amountfor"];
+                }
+            }
+
+            $t["amount"] = $amount;
+
+            array_push($result,$t);
+        }
+
+        return $result;
+    }
+
+    /**
+     * refunds
+     *
+     * @param  $id row id
+     *
+     * @return array
+     */
+    private function refunds(array $ids):array
+    {
+        $rows = $this->refund->whereIn("pid",$ids)->get();
+    }
+
+    /**
+     * money back
+     *
+     *  @param  $id row id
+     *
+     * @return array
+     */
+    private function MoneyBack(array $ids) :array
+    {
+
+    }
+
+    /**
+     * key
+     * @return string
+     */
+    private function rowKey($len = 15):string
+    {
+        $keys = "1qazxsw23edcvfr45tgbnhy67ujmki89olp0";
+        $string = "";
+
+        for ($i = 0; $i < $len; ++$i) {
+            $index = mt_rand(0, strlen($keys) - 1);
+            $string .= $keys[$index];
+        }
+
+        return $string;
     }
 }

@@ -192,7 +192,7 @@ class ProductMakeOfferController extends Controller
     public function OfferList(OfferListRequest $request)
     {
         $ids = $this->AuthIdList();
-        $rows = $this->offers->whereIn("creator_id",$ids)->orWhereIn("serviceor_id", $ids)->get();
+        $rows = $this->offers->whereIn("creator_id",$ids)->orWhereIn("serviceor_id", $ids)->orderBy("id","desc")->get();
 
         return response(["status" => "success", "data" => OfferListResource::collection($rows)],200);
     }
