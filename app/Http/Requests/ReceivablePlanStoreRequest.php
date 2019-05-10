@@ -26,7 +26,7 @@ class ReceivablePlanStoreRequest extends FormRequest
         return [
             //
             'date'      => 'required',
-            'pid'       => 'required',
+            'rid'       => 'required',
             'content'   => 'required'
         ];
     }

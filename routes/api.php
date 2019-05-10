@@ -167,7 +167,7 @@ Route::group(['middleware' => 'refresh.token'], function () {
         Route::post('realcustomer/import', 'RealCustomerController@ImportFromExcel');
         Route::post('realcustomer/test', 'RealCustomerController@Test');
         /**修改客户状态**/
-        Route::post('realcustomer/update/status', 'RealCustomerController@updateStatus');
+        Route::post("Arrears/update/status", "ArrearsController@updateStatus");
         /**新增项目**/
         Route::post('project/store', 'ProjectController@store');
         /**查询项目**/
@@ -204,14 +204,13 @@ Route::group(['middleware' => 'refresh.token'], function () {
         Route::post('arsum/filter/query', 'ARSumFilterController@FieldQuery');
         /**过滤方案**/
         Route::post('arsum/filter/get/program', 'ARSumFilterController@PersonalFilterProgram');
-        //潜在客户
-        Route::post('potentialCustomer/all', 'PotentialCustomerController@all');
-        Route::post('potentialProject/store', 'PotentialProjectController@store');
+        Route::post("arrear/search", "ArrearsController@searchName");
         /**收款计划**/
         Route::post('ReceivablePlan/add', 'ReceivablePlanController@store');
         Route::post('ReceivablePlan/all', 'ReceivablePlanController@all');
         Route::post('ReceivablePlan/update', 'ReceivablePlanController@update');
         Route::post('ReceivablePlan/delete', 'ReceivablePlanController@del');
+
         /**应收后台管理**/
         Route::post('arset/fieldtype', 'ARSetController@FieldType');
         Route::post('arset/fieldstore', 'ARSetController@StoreField');

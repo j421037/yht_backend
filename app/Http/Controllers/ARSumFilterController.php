@@ -138,7 +138,7 @@ class ARSumFilterController extends Controller
         return [
             array(
                 'label' => '客户名称',
-                'value' => 'cust_id',
+                'value' => 'customer_name',
                 'type'  => 'server',
                 'attr'  => 'string',
             ),
@@ -150,8 +150,8 @@ class ARSumFilterController extends Controller
                 'list'  => ARSumFilterQueryResource::collection($this->GetEnumberItem('F_CMK_CUSTATUS')),
             ),
             array(
-                'label' => '旗下项目',
-                'value' => 'pid',
+                'label' => '项目名称',
+                'value' => 'project_name',
                 'type' => 'server',
                 'attr'  => 'string',
             ),

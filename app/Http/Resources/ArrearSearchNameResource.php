@@ -4,7 +4,7 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class RefoundResource extends JsonResource
+class ArrearSearchNameResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
@@ -15,11 +15,9 @@ class RefoundResource extends JsonResource
     public function toArray($request)
     {
         return [
-            'id'        => $this->id,
-            'refund'    => $this->amountfor,
-            'date'      => date('Y-m-d',$this->date),
-            'remark'    => $this->remark,
-            'created'   => $this->created_at
+            "id"             => $this->id,
+            "customer_name"  => $this->customer_name,
+            "project_name"   => $this->project_name
         ];
     }
 }

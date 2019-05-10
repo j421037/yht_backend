@@ -123,22 +123,28 @@ class RealCustomerObserver {
         $project = $this->project->find($realCustomer->pid);
         $row = $this->arrearsData->where(["customer_name" => $realCustomer->name,"project_name" => $project->name, "work_scope" => $realCustomer->work_scope])->first();
 
-        if ($row)
-            return;
+        if (!$row)
+            $row = $this->arrearsData->newInstance();
+
         $user = $this->user->find($realCustomer->user_id);
         $scope = $this->enumItem->find($realCustomer->work_scope);
-        $row = $this->arrearsData->newInstance();
+
         $row->customer_name = $realCustomer->name;
         $row->customer_id = $realCustomer->id;
         $row->project_name = $project->name;
         $row->project_id = $project->id;
         $row->user_name = $user->name;
         $row->user_id = $user->id;
-        $row->work_scope = $scope->id;
-        $row->work_scope_name = $scope->name;
         $row->contract = $realCustomer->contract ?? 0;
         $row->attached = $realCustomer->attached ?? 0;
         $row->tax = $realCustomer->tax ?? 0;
+        $row->account_period = $realCustomer->account_period ?? 0;
+
+        if ($scope) {
+            $row->work_scope = $scope->id;
+            $row->work_scope_name = $scope->name;
+        }
+
         $row->save();
 
     }

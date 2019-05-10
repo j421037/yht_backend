@@ -104,117 +104,7 @@ class RealCustomerController extends Controller
     	return response(['data' => $list], 200);
     }
 
-    /**导入客户**/
-    public function ImportFromExcel(Request $request) 
-    {   
-        if (empty($request->file)) {
-            return ;
-        }
 
-        $userid = Auth::user()->id;
-        $file = Storage::disk('local')->putFile('file/'.date('Y-m-d',time()), $request->file);
-        
-        $realpath = storage_path('app/'.$file);
-
-        //$realpath = storage_path('app/template/template.xlsx');
-
-        //sheet1中存放合作客户的内容
-        $data = Excel::selectSheetsByIndex(1)->load($realpath, 'UTF-8')->get($this->excelParam);
-        //sheet2中存放潜在目标客户的内容
-
-        $fail = [];
-        $success = 0;
-        $statusItemId = $this->GetEnumberItem('F_CMK_CUSTATUS');
-        $tid = $this->GetEnumberItem('F_CMK_PROATTR');
-
-        foreach ($data as $k => $v) {
-            if (!$v->name || !$v->user || strtotime($v->date) < 1)
-                continue;
-
-            $user = User::where(['name' => trim($v->user)])->first();
-
-            if (!$user) 
-                continue;
-
-            $cusItem = ['name' => trim($v->name), 'user_id' => $user->id, 'status' => $statusItemId];
-            $proItem = [];
-
-            if ($v->project) {
-                $proItem = [
-                    'name' => trim($v->project),
-                    'user_id' => $user->id,
-                    'payment_days' => trim($v->payment_days),
-                    'type' => trim($v->type),
-                    'tax' => trim($v->tax),
-                    'agreement' => trim($v->agreement),
-                    'tid' => $tid,
-                    'tag' => $this->GetEnumberItemFormName($v->tag),
-                    'affiliate' => trim($v->affiliate),//挂靠信息
-                    'estimate' => trim($v->estimate), //预计金额
-                    'phone_num' => trim($v->phone_num), //联系电话
-                ];
-            }
-            $receivable = [
-                'init_amountfor' => trim($v->init) ?? 0,
-                'is_init' => 1,
-                'date'    => trim($v->date),
-                'remark'  => trim($v->remark)  
-            ];
-
-            $result = $this->_batchStore($cusItem, $proItem, $receivable);
-
-            if ($result) {
-
-                ++$success;
-
-            } else {
-                array_push($fail,['name' => $v->name,'project' => $v->project]);
-            }
-        }
-
-        return response(['status' => 'success', 'success' => $success, 'fail' => $fail]);    
-
-    }
-
-    /**
-    *批量增加客户和项目
-    * @param $cusItem 客户列表
-    * @param $proItem 项目列表 
-    */
-    protected function _batchStore($cusItem, $proItem, $receItem) 
-    {
-        DB::beginTransaction();
-        try {
-            if ($result = RealCustomer::firstOrCreate($cusItem)) {
-                $rece = [
-                    'cust_id'   => $result->id,
-                    'amountfor' => $receItem['init_amountfor'],
-                    'is_init'   => 1,
-                    'date'      => strtotime($receItem['date']),
-                    'remark'    => $receItem['remark'],
-                    'pid'       => 0
-                ];
-
-                if (count($proItem) > 0) {
-                    $proItem['cust_id'] = $result->id;
-                    $project = Project::create($proItem);
-                    $rece['pid'] = $project->id;
-                }
-
-                if (AReceivable::create($rece)) {
-                    DB::commit();
-                    return true;
-                }
-            }
-            else {
-                return false;
-            }
-        }
-        catch (\Illuminate\Database\QueryException $e) {
-            DB::rollback();
-            return false;
-        } 
-    }
     /**返回绑定属性信息
      * @param $AttrName 属性名称
      */
@@ -441,24 +331,29 @@ class RealCustomerController extends Controller
     public function updateInfo(Request $request)
     {
         $realCustomer = RealCustomer::find($request->id);
-        if (RealCustomer::where(['name' => $request->name, 'work_scope' => $request->work_scope])->first()) {
+        if (RealCustomer::where(['name' => $request->name, 'work_scope' => $request->work_scope,"pid" => $request->pid])->first()) {
             return response(['status' => 'error', 'errmsg' => '施工范围客户已存在'], 200);
         }
         try {
             $realCustomer->name = trim($request->name);
 			$realCustomer->phone = trim($request->phone);
-			$realCustomer->work_scope = $request->work_scope;
 			$realCustomer->project_type = $request->project_type;
-			$realCustomer->attached = $request->attached;
 			$realCustomer->contract = $request->contract;
 			$realCustomer->account_period = $request->account_period;
 			$realCustomer->tax = trim($request->tax);
 			$realCustomer->coop = $request->coop;
 			$realCustomer->level = $request->level;
 
+            if (is_numeric($request->attached)) {
+                $realCustomer->attached = $request->attached;
+            }
+
+            if (is_numeric($request->work_scope)) {
+                $realCustomer->work_scope = $request->work_scope;
+            }
 
             if ($realCustomer->save()) {
-                return response(['status' => 'success']);
+                return response(['status' => 'success',"data"=>$realCustomer]);
             }
         }
         catch (QueryException $e) {

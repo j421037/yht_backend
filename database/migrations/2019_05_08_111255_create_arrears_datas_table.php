@@ -20,14 +20,18 @@ class CreateArrearsDatasTable extends Migration
             $table->string("project_name")->comment("项目名称");
             $table->unsignedInteger("project_id")->comment("项目id");
             $table->unsignedTinyInteger("tag")->default(0)->comment("标签");
+            $table->string("tag_name")->nullable()->comment("标签名称");
             $table->unsignedTinyInteger("status")->default(0)->comment("状态");
+            $table->string("status_name")->nullable()->comment("状态名称");
             $table->unsignedInteger("contract")->default(0)->comment("合同");
             $table->unsignedInteger("work_scope")->default(0)->comment("施工范围");
             $table->string("work_scope_name")->nullable()->comment("施工范围名称");
             $table->unsignedTinyInteger("attached")->default(0)->comment("挂靠");
+            $table->unsignedInteger("account_period")->default(0)->comment("账期");
             $table->string("user_name")->comment("业务员");
             $table->unsignedInteger("user_id")->comment("业务员ID");
             $table->string("tax")->nullable()->comment("税率");
+
             $table->timestamps();
         });
     }
