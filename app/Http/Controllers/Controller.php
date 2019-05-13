@@ -119,7 +119,7 @@ class Controller extends BaseController
         if ($this->isAdmin())
             return User::all()->pluck("name","id")->toArray();
         else if ($this->isManager()||$this->isAssistant())
-            return User::where(["department_id" => $this->getDepartId()])->pluck("name","id")->toArray();
+            return User::where(["department_id" => $this->getDepartId()])->get()->pluck("name","id")->toArray();
         return [ $this->getUserId() => $this->getUser()->name];
     }
 
@@ -139,7 +139,7 @@ class Controller extends BaseController
     {
         if (!$userid)
             $userid = $this->getUserId();
-        return (bool) Assistant::find($userid);
+        return (bool) Assistant::where(["user_id" => $userid])->first();
     }
 
     /**
