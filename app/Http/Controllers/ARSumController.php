@@ -3,11 +3,12 @@
 namespace App\Http\Controllers;
 
 use Log;
+use App\Refund;
 use App\AReceivebill;
 use App\ArrearsData;
 use App\AReceivable;
 use App\FilterProgram;
-use App\Refund;
+use App\InitialAmount;
 use Illuminate\Http\Request;
 use Illuminate\Database\Eloquent\Collection;
 
@@ -33,6 +34,7 @@ class ARSumController extends Controller
     protected $receivable;
     protected $receivebill;
     protected $refund;
+    protected $initial;
 
     /**
      *  date
@@ -48,7 +50,8 @@ class ARSumController extends Controller
         FilterProgram $filter,
         AReceivable $receivable,
         AReceivebill $receivebill,
-        Refund $refund
+        Refund $refund,
+        InitialAmount $initialAmount
     )
     {
         $this->arrearData = $arrearsData;
@@ -56,6 +59,7 @@ class ARSumController extends Controller
         $this->receivable = $receivable;
         $this->receivebill = $receivebill;
         $this->refund = $refund;
+        $this->initial = $initialAmount;
 
         $this->year = date("Y",time());
         $this->month = date("m", time());
@@ -88,26 +92,30 @@ class ARSumController extends Controller
             $where = [];
         }
 
+        $lastItem = [];
+        $result = [];
         $model = $this->arrearData->where($where)->whereIn("user_id",$this->UserAuthorizeIds());
         $rows = $model->orderBy("customer_name")->get();
         $total = $model->count();
-        $lastItem = [];
         $rows = $this->makeMount($rows, $request->sortval ?? 0);
 
-        foreach ($rows as &$v) {
-            if (isset($lastItem["customer_name"])
-                && $lastItem["customer_name"] == $v["customer_name"]) {
-                $v["nameshow"] = false;
-            }
-            else {
-                $v["nameshow"] = true;
-                $lastItem = $v;
-            }
+        foreach ($rows as $k => $v) {
+            if ($k >= $request->offset && $k <= $request->limit + $request->offset - 1) {
+                if (isset($lastItem["customer_name"])
+                    && $lastItem["customer_name"] == $v["customer_name"]) {
+                    $v["nameshow"] = false;
+                } else {
+                    $v["nameshow"] = true;
+                    $lastItem = $v;
+                }
 
-            $v["rowkey"] = $this->rowKey();
+                $v["rowkey"] = $this->rowKey();
+
+                array_push($result, $v);
+            }
         }
 
-        return response(["total" => $total,"data" => $rows], 200);
+        return response(["total" => $total,"data" => $result], 200);
     }
 
     /**
@@ -134,135 +142,119 @@ class ARSumController extends Controller
         //ids
         $ids = $rows->pluck("id")->toArray();
 
+        //initials
+        $initials = $this->InitialAmount($ids);
+
         //sales
-        $sales = $this->sales($ids);
+        $s = $this->getDatas($ids, "receivable");
 
         //moneybacks
-        $moneyBacks = $this->MoneyBack($ids);
+        $m = $this->getDatas($ids, "receivebill");
 
         //refunds
-        $refunds = $this->refunds($ids);
+        $r = $this->getDatas($ids, "refund");
 
         /**
          * sales=> [
          *    0 =>  [
          *          "rid" => xx,
-         *          "beginning" => xxx
+         *          "total" => xxx
          *          "amountf" => [1 => xxx,2=>xxx]
          *      ]
          *    ]
          */
 
         foreach ($ids as $k => $v) {
-            $s = [];
-            $m = [];
-            $r = [];
-            $t = [];
-            $tmp = ["rid" => $v];
-            $mbegin = 0;
-            $rbegin = 0;
-            $sbegin = 0;
-            $smount = $this->month_i;
-            $mamount = $this->month_i;
-            $ramount = $this->month_i;
 
-            foreach ($moneyBacks as $mv) {
-                if ($v != $mv["rid"])
-                    continue;
-                $m = $mv;
-            }
+            $initial_total = 0;
+            $start_month = 1;
+            $sale_mount = $this->month_i;
+            $back_amount = $this->month_i;
+            $refund_mount = $this->month_i;
+            $item = array(); //
+            $sales = array();
+            $refunds = array();
+            $backs = array();
 
-            foreach ($refunds as $rv) {
-                if ($v != $rv["rid"])
-                    continue;
-                $r = $rv;
-            }
+            foreach($initials as $iv) {
+                if ($iv["rid"] == $v) {
+                    //has initial
+                    $initial_total = $iv["amount"];
+                    $date = $iv["start"];
 
-            foreach ($sales as $sv) {
-                if ($v != $sv["rid"])
-                    continue;
-                $s = $sv;
-            }
-
-            if (isset($s["beginning"])) {
-                $sbegin = $s["beginning"];
-            }
-
-            if (isset($m["beginning"]))
-            {
-                $mbegin = $m["beginning"];
-            }
-
-            if (isset($r["beginning"])) {
-                $rbegin = $r["beginning"];
-            }
-
-            if (isset($s["amount"])) {
-                $smount = $s["amount"];
-            }
-
-            if (isset($r["amount"])) {
-                $ramount = $r["amount"];
-            }
-
-            if (isset($m["amount"])) {
-                $mamount = $m["amount"];
-            }
-
-            for ($i = 1; $i <= $this->month;++$i) {
-                $t[$i] = [];
-            }
-
-            $lastArr = 0;
-            $initial = [];
-            $initMonth = 0;
-            $t[1]["begin"] = bcsub(bcsub($sbegin,$mbegin, self::DECIMALS), $rbegin, self::DECIMALS);
-            $coopAmount =  bcsub($sbegin, $rbegin, self::DECIMALS);
-
-            if (isset($s["initial"])) {
-                $initial = $s["initial"];
-                $initMonth = date("m", $initial["date"]);
-            }
-
-            foreach($t as $month => $tv) {
-
-                if ($month <= $this->month) {
-
-                    if (!isset($t[$month]["begin"])) {
-                        $t[$month]["begin"] = $lastArr;
-                    }
-
-                    if ((int)$initMonth == (int)$month){
-                        $t[$month]["begin"] = $initial["amountfor"];
-                        $coopAmount = bcadd($coopAmount, $initial["amountfor"], self::DECIMALS);
+                    if (date("Y",$date) >= $this->year) {
+                        $start_month = (int) date("m",$date);
                     }
                 }
-                else {
-                    $t[$month]["begin"] = 0;
-                }
-
-                $t[$month]["sales"] = $smount[$month];
-                $t[$month]["refunds"] = $ramount[$month];
-                $t[$month]["money_back"] = $mamount[$month];
-
-                $p0 = bcadd($smount[$month],$t[$month]["begin"],self::DECIMALS);
-                $p1 = bcadd($t[$month]["refunds"],$t[$month]["money_back"], self::DECIMALS);
-
-                $t[$month]["arrears"] = $lastArr = bcsub($p0, $p1,self::DECIMALS);
-                $coopAmount = bcsub(bcadd($coopAmount, $t[$month]["sales"], self::DECIMALS),$t[$month]["refunds"],self::DECIMALS);
-
             }
 
-            $tmp["info"] = $t;
+            foreach ($s as $sv) {
+                if ($sv["rid"] != $v)
+                    continue;
+                $sales = $sv;
+            }
 
-            $rows->map(function(&$item) use (&$tmp, &$coopAmount) {
-                if ($item["id"] == $tmp["rid"]) {
-                    $item["monthly_sales"] = $tmp["info"];
-                    $item["coop_amount"] = $coopAmount;
-                    $item["begin"] = $tmp["info"][1]["begin"];
-                    $item["arrears"] = $tmp["info"][(int)$this->month]["arrears"];
+            foreach ($m as $mv) {
+                if ($mv["rid"] != $v)
+                    continue;
+                $backs = $mv;
+            }
+
+            foreach ($r as $rv) {
+                if ($rv["rid"] != $v)
+                    continue;
+                $refunds = $rv;
+            }
+
+            $monthly = [];
+            $last_balance = $initial_total;
+            for($i = 1; $i <=12; ++$i) {
+                $sale_total = 0;
+                $back_total = 0;
+                $refund_total = 0;
+                $balance_total = 0;
+                $initial_total = 0;
+
+                if ($i >= $start_month && $i <= $this->month) {
+
+                    if (isset($sales["amount"]))
+                        $sale_total = $sales["amount"][$i];
+
+                    if (isset($refunds["amount"]))
+                        $refund_total = $refunds["amount"][$i];
+
+                    if (isset($backs["amount"]))
+                        $back_total = $backs["amount"][$i];
+
+                    $p1 = bcadd($sale_total,$initial_total,self::DECIMALS);
+                    $p2 = bcadd($refund_total, $balance_total);
+                    $p3 = bcsub($p1,$p2,self::DECIMALS);
+
+                    $last_balance = $balance_total = $p3;
+
                 }
-            });
+
+                $monthly[$i]["initial"] = $initial_total;
+                $monthly[$i]["sales"] = $sale_total;
+                $monthly[$i]["refunds"] = $refund_total;
+                $monthly[$i]["backs"] = $back_total;
+                $monthly[$i]["balances"] = $balance_total;
+            }
+
+            foreach ($rows as &$row) {
+                if ($row["id"] == $v) {
+                    $row["monthly"] = $monthly;
+                    //$item["coop_amount"] = $coopAmount;
+                    $client_sales = isset($sales["client"]) ? $sales["client"] : 0;
+                    $client_refunds = isset($refunds["client"]) ? $refunds["client"] : 0;
+                    $collegaue_sales = isset($sales["colleague"]) ? $sales["colleague"] : 0;
+                    $collegaue_refunds = isset($refunds["colleague"]) ? $refunds["colleague"] : 0;
+
+                    $row["client_total"] = bcsub($client_sales, $client_refunds,self::DECIMALS);
+                    $row["colleague_total"] = bcsub($collegaue_sales, $collegaue_refunds,self::DECIMALS);
+                }
+            }
+
         }
 
         $result = $rows->toArray();
@@ -270,7 +262,7 @@ class ARSumController extends Controller
         if ($sort == 1) {
             //order by arrears
            // return $rows->sortByDesc(function($item, $key) {return $item["arrears"];})->toArray();
-            $result = $this->quickSortDesc($result);
+            //$result = $this->quickSortDesc($result);
         }
 
 
@@ -285,10 +277,10 @@ class ARSumController extends Controller
      *
      * @return array
      */
-    private function sales(array $ids) : array
+    private function getDatas(array $ids,string $modelName) : array
     {
         $result = [];
-        $rows = $this->receivable->whereIn("rid",$ids)->get();
+        $rows = $this->$modelName->whereIn("rid",$ids)->get();
 
         if ($rows) {
             $rows = collect($rows)->groupBy("rid")->toArray();
@@ -297,82 +289,43 @@ class ARSumController extends Controller
             return $result;
         }
 
-        foreach ($rows as $k => $v) {
-            $amount = $this->month_i;
-            $r = [];
-            $t = ["beginning" => 0,"rid" => $k, "amount" => $this->month_i];
+        $result = $this->sumAmount($rows);
 
-            array_walk($v,function($item) use (&$t,&$amount,&$r){
-
-                // accumulate beginning
-                if ($item["date"] <= $this->year_t) {
-                    $t["beginning"] = bcadd($t["beginning"],$item["amountfor"],self::DECIMALS);
-                }
-                else if ($item["is_init"] != 1){
-                    $i = date("m",$item["date"]);
-
-                    $amount[(int)$i] = bcadd($amount[(int)$i], $item["amountfor"], self::DECIMALS);
-                }
-
-                if ($item["is_init"] == 1 && count($r) < 1) {
-                    $r = $item;
-                }
-
-            });
-
-            if ($t["beginning"] <= 0 && $r) {
-                $t["initial"] = $r;
-            }
-
-            $t["amount"] = $amount;
-
-            array_push($result,$t);
-        }
         return $result;
     }
 
+
     /**
-     * refunds
-     *
-     * @param  $id row id
-     *
-     * @return array
+     *  init amount
      */
-    private function refunds(array $ids):array
+    private function InitialAmount(array $ids) :array
     {
-        $rows = $this->refund->whereIn("rid",$ids)->get();
+        $result = [];
+        $rows = $this->initial->whereIn("rid",$ids)->get();
 
         if ($rows) {
             $rows = $rows->groupBy("rid")->toArray();
         }
         else {
-            return [];
+            return $result;
         }
 
-        return $this->sumAmount($rows);
+        foreach($rows as $k => $v) {
+            $amount = 0;
+            $row = collect($v);
+            $date_t = $row->pluck("date")->toArray();
+            asort($date_t);
+            $start = $date_t[0]; //begin date
+
+            array_walk($v, function($item) use (&$amount) {
+                $amount = bcadd($amount, $item["amountfor"],self::DECIMALS);
+            });
+
+            array_push($result, ["rid" => $k,"start" => $start,"amount" => $amount]);
+        }
+
+        return $result;
     }
-
-    /**
-     * money back
-     *
-     *  @param  $id row id
-     *
-     * @return array
-     */
-    private function MoneyBack(array $ids) :array
-    {
-        $rows = $this->receivebill->whereIn("rid",$ids)->get();
-
-        if ($rows) {
-            $rows = $rows->groupBy("rid")->toArray();
-        }
-        else {
-            return [];
-        }
-
-        return $this->sumAmount($rows);
-    }
-
     /**
      * [
      *    "6(rid)" => [
@@ -388,15 +341,24 @@ class ARSumController extends Controller
         $result = [];
 
         foreach ($rows as $k => $v) {
-            $t = ["beginning" => 0, "rid" => $k,"amount" => $this->month_i];
+            $t = ["total" => 0, "rid" => $k,"amount" => $this->month_i,"client" => 0,"colleague" => 0];
 
             foreach ($v as $vv) {
                 if ($vv["date"] <= $this->year_t) {
-                    $t["beginning"] = bcadd($t["beginning"], $vv["amountfor"], self::DECIMALS);
+                    $t["total"] = bcadd($t["total"], $vv["amountfor"], self::DECIMALS);
                 }
                 else {
                     $i = (int) date("m",$vv["date"]);
                     $t["amount"][$i] = bcadd($t["amount"][$i], $vv["amountfor"], self::DECIMALS);
+                }
+
+                if (isset($vv["type"])) {
+                    if ($vv["type"] == 0) {
+                        $t["client"] = bcadd($t["client"], $vv["amountfor"],self::DECIMALS);
+                    }
+                    else {
+                        $t["colleague"] = bcadd($t["colleague"], $vv["amountfor"],self::DECIMALS);
+                    }
                 }
             }
 

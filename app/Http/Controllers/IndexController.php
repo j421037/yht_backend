@@ -5,6 +5,7 @@
 */
 namespace App\Http\Controllers;
 
+use App\ArrearsData;
 use Auth;
 use Event;
 use App\Project;
@@ -90,20 +91,27 @@ class IndexController extends Controller
     {
 		try {
 			$data = array();
+            $p = ArrearsData::where(['user_id' => $request->user_id])->get()->pluck("id");
+            $res = AReceivable::whereIN('rid', $p)->get();
+            $year = date("Y", time());
+
 			for ($i=1; $i <= 12; $i++) {
-				$p = Project::where(['created_year'=>$request->created_year, 'created_month' => $i, 'user_id' => $request->user_id])->get();
-				if($p) {
-					$res = AReceivable::whereIN('pid', $p)->get();
+
+				if($res) {
 					$total = 0;
 					foreach($res as $value) {
-						$total += $value['amountfor'];
+					    $start = mktime(0,0,0,$i,1,$year);
+					    $end = mktime(0,0,0,$i + 1,1,$year);
+					    if ($value["date"] >= $start && $value["date"] < $end) {
+                            $total += $value['amountfor'];
+                        }
 					}
 					$data[] = $total;
 				} else {
 					$data[] = 0;
 				}
 			}
-			return response(['data' => json_encode($data)], 200);
+			return response(['data' => $data], 200);
 		}
         catch (QueryException $e) {
             return response(['status' => 'error', 'errmsg' => $e->getMessage()]);

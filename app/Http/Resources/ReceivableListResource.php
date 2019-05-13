@@ -20,7 +20,8 @@ class ReceivableListResource extends JsonResource
             'amountfor_format'  => number_format($this->amountfor),
             'date'              => date('Y-m-d',$this->date),
             'remark'            => $this->remark,
-            'is_init'           => $this->is_init
+            'type'              => $this->type,
+            "type_name"         => $this->type == 0 ? "终端" : "同行"
         ];
     }
 }

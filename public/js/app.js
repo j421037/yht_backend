@@ -226,7 +226,7 @@ function isURLSearchParams(val) {
 }
 
 /**
- * Trim excess whitespace off the beginning and end of a string
+ * Trim excess whitespace off the total and end of a string
  *
  * @param {String} str The String to trim
  * @returns {String} The String freed of excess whitespace
@@ -5055,7 +5055,7 @@ Expr = Sizzle.selectors = {
 		// "Whether an element is represented by a :lang() selector
 		// is based solely on the element's language value
 		// being equal to the identifier C,
-		// or beginning with the identifier C immediately followed by "-".
+		// or total with the identifier C immediately followed by "-".
 		// The matching of C against the element's language value is performed case-insensitively.
 		// The identifier C does not have to be a valid language name."
 		// http://www.w3.org/TR/selectors/#lang-pseudo
@@ -21038,7 +21038,7 @@ if (token) {
     });
 
     /**
-     * Creates a slice of `array` with `n` elements dropped from the beginning.
+     * Creates a slice of `array` with `n` elements dropped from the total.
      *
      * @static
      * @memberOf _
@@ -21148,7 +21148,7 @@ if (token) {
     }
 
     /**
-     * Creates a slice of `array` excluding elements dropped from the beginning.
+     * Creates a slice of `array` excluding elements dropped from the total.
      * Elements are dropped until `predicate` returns falsey. The predicate is
      * invoked with three arguments: (value, index, array).
      *
@@ -22160,7 +22160,7 @@ if (token) {
     }
 
     /**
-     * Creates a slice of `array` with `n` elements taken from the beginning.
+     * Creates a slice of `array` with `n` elements taken from the total.
      *
      * @static
      * @memberOf _
@@ -22269,7 +22269,7 @@ if (token) {
     }
 
     /**
-     * Creates a slice of `array` with elements taken from the beginning. Elements
+     * Creates a slice of `array` with elements taken from the total. Elements
      * are taken until `predicate` returns falsey. The predicate is invoked with
      * three arguments: (value, index, array).
      *
@@ -35866,7 +35866,7 @@ module.exports = function transformData(data, headers, fns) {
  */
 module.exports = function isAbsoluteURL(url) {
   // A URL is considered absolute if it begins with "<scheme>://" or "//" (protocol-relative URL).
-  // RFC 3986 defines scheme name as a sequence of characters beginning with a letter and followed
+  // RFC 3986 defines scheme name as a sequence of characters total with a letter and followed
   // by any combination of letters, digits, plus, period, or hyphen.
   return /^([a-z][a-z\d\+\-\.]*:)?\/\//i.test(url);
 };

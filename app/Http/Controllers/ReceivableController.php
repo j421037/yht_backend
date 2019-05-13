@@ -8,6 +8,7 @@ namespace App\Http\Controllers;
 use Auth;
 use Event;
 use App\AReceivable;
+use App\InitialAmount;
 use App\Events\ARLogEvent;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Http\Request;
@@ -42,14 +43,16 @@ class ReceivableController extends Controller
 
     public function store(ReceivableEntryRequest $request)
     {
-    	$list = $request->all();
-    	$list['date'] = strtotime($list['date']);
-    	/**假如已经有期初 则不能新建期初应收单**/
-    	$receivable = AReceivable::where(['rid' => $request->rid, 'is_init' => 1])->first();
+    	$list = [];
+    	$list["rid"] = $request->rid;
+    	$list["amountfor"] = $request->amountfor;
+    	$list["remark"] = $request->remark;
+    	$list['date'] = strtotime($request->date);
+    	$row = InitialAmount::where(["rid" => $request->rid])->orderBy("date","asc")->first();
 
-    	if ($receivable) {
-    		$list['is_init'] = 0;
-    	}
+    	if ($row && $list["date"] < $row->date) {
+    	    return response(["status" => "error","errmsg" => "销售记录不能在期初: ".date("Y年m月d日",$row->date)."之前"],200);
+        }
 
     	try {
     		if ($result = AReceivable::create($list)) {

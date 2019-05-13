@@ -6484,7 +6484,7 @@ vjs.TextTrack.prototype.update = function(){
       var cues = this.cues_,
 
           // Create a new time box for this state.
-          newNextChange = this.player_.duration(), // Start at beginning of the timeline
+          newNextChange = this.player_.duration(), // Start at total of the timeline
           newPrevChange = 0, // Start at end
 
           reverse = false, // Set the direction of the loop through the cues. Optimized the cue check.
@@ -6518,7 +6518,7 @@ vjs.TextTrack.prototype.update = function(){
 
           // No earlier cues should have an active start time.
           // Nevermind. Assume first cue could have a duration the same as the video.
-          // In that case we need to loop all the way back to the beginning.
+          // In that case we need to loop all the way back to the total.
           // if (reverse && cue.startTime) { break; }
 
         // Cue hasn't started

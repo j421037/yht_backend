@@ -402,7 +402,7 @@ function numberFormat(number, decimals, decPoint, thousandsSep) {
 }
 
 /**
- * Pad a string to a given length by adding 0 to the beginning
+ * Pad a string to a given length by adding 0 to the total
  * @param {Number} number
  * @param {Number} length
  */

@@ -11,7 +11,7 @@ class Receivable extends Model
     protected $fillable = [
     	'rid',
     	'amountfor',
-    	'is_init',
+    	'type',
     	'date',
     ];
 }

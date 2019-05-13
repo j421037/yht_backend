@@ -26,7 +26,7 @@ class ReceivableEntryRequest extends FormRequest
         return [
             "id"    => "",
             'rid'       => 'required|numeric',
-            'is_init'    => 'required|numeric',
+            'type'    => 'required|numeric',
             'amountfor' => 'required|numeric',
             'date'      => 'required',
             'remark'    => ''
