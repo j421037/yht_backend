@@ -285,7 +285,7 @@ Route::post('index/sales', 'IndexController@getSales');
 Route::post('index/received', 'IndexController@getReceived');
 Route::post('index/debt', 'IndexController@getDebt');
 
-Route::post('index/user', 'Controller@UserAuthorizeCollects');
+Route::post('index/user', 'IndexController@users');
 
 //项目管理
 Route::post('realcustomer/all', 'RealCustomerController@all');
