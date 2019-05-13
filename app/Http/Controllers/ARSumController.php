@@ -168,22 +168,19 @@ class ARSumController extends Controller
 
             $initial_total = 0;
             $start_month = 1;
-            $sale_mount = $this->month_i;
-            $back_amount = $this->month_i;
-            $refund_mount = $this->month_i;
-            $item = array(); //
             $sales = array();
             $refunds = array();
             $backs = array();
+            $initial_date = 0;
 
             foreach($initials as $iv) {
                 if ($iv["rid"] == $v) {
                     //has initial
                     $initial_total = $iv["amount"];
-                    $date = $iv["start"];
+                    $initial_date = $iv["start"];
 
-                    if (date("Y",$date) >= $this->year) {
-                        $start_month = (int) date("m",$date);
+                    if (date("Y",$initial_date) >= $this->year) {
+                        $start_month = (int) date("m",$initial_date);
                     }
                 }
             }
@@ -206,14 +203,33 @@ class ARSumController extends Controller
                 $refunds = $rv;
             }
 
+
+
+            //
+            $history_sales = isset($sales["history_total"]) ? $sales["history_total"] :0;
+            $history_backs = isset($backs["history_total"]) ? $backs["history_total"] :0;
+            $history_refunds = isset($refunds["history_total"]) ? $refunds["history_total"] : 0;
+
+            $history_a = bcadd($history_sales, $initial_total,self::DECIMALS);
+            $history_b = bcadd($history_backs, $history_refunds,self::DECIMALS);
+            $last_balance = bcsub($history_a, $history_b,self::DECIMALS);
+
             $monthly = [];
-            $last_balance = $initial_total;
+            $allSales = isset($sales["total"]) ? $sales["total"] : 0;
+            $allRefunds = isset($refunds["total"]) ? $refunds["total"] : 0;
+            $allBacks = isset($backs["total"]) ? $backs["total"] : 0;
+            $allSales = bcadd($allSales, $initial_total,self::DECIMALS);
+
             for($i = 1; $i <=12; ++$i) {
                 $sale_total = 0;
                 $back_total = 0;
                 $refund_total = 0;
-                $balance_total = 0;
-                $initial_total = 0;
+
+                if ($i > $this->month) {
+                    $last_balance = 0;
+                }
+
+                $monthly[$i]["initial"] = $last_balance;
 
                 if ($i >= $start_month && $i <= $this->month) {
 
@@ -226,32 +242,61 @@ class ARSumController extends Controller
                     if (isset($backs["amount"]))
                         $back_total = $backs["amount"][$i];
 
-                    $p1 = bcadd($sale_total,$initial_total,self::DECIMALS);
-                    $p2 = bcadd($refund_total, $balance_total);
+                    $p1 = bcadd($sale_total,$last_balance,self::DECIMALS);
+                    $p2 = bcadd($refund_total, $back_total);
                     $p3 = bcsub($p1,$p2,self::DECIMALS);
 
-                    $last_balance = $balance_total = $p3;
+                    $last_balance = $p3;
 
                 }
 
-                $monthly[$i]["initial"] = $initial_total;
+
                 $monthly[$i]["sales"] = $sale_total;
                 $monthly[$i]["refunds"] = $refund_total;
                 $monthly[$i]["backs"] = $back_total;
-                $monthly[$i]["balances"] = $balance_total;
+                $monthly[$i]["refunds"] = $refund_total;
+                $monthly[$i]["balances"] = $last_balance;
             }
 
             foreach ($rows as &$row) {
                 if ($row["id"] == $v) {
                     $row["monthly"] = $monthly;
-                    //$item["coop_amount"] = $coopAmount;
+
                     $client_sales = isset($sales["client"]) ? $sales["client"] : 0;
                     $client_refunds = isset($refunds["client"]) ? $refunds["client"] : 0;
                     $collegaue_sales = isset($sales["colleague"]) ? $sales["colleague"] : 0;
                     $collegaue_refunds = isset($refunds["colleague"]) ? $refunds["colleague"] : 0;
+                    $coop_total = bcsub($allSales, $allRefunds, self::DECIMALS);
 
+                    $row["initial_total"] = $initial_total;
+                    $row["coop_total"] = $coop_total;
                     $row["client_total"] = bcsub($client_sales, $client_refunds,self::DECIMALS);
                     $row["colleague_total"] = bcsub($collegaue_sales, $collegaue_refunds,self::DECIMALS);
+                    $row["balance_total"] = bcsub($coop_total, $allBacks,self::DECIMALS);
+
+                    /**overdue**/
+                    $overdue = 0;
+                    $finalBackDate = 0;
+
+                    if ($row["account_period"] && $row["balance_total"] > 0) {
+
+                        $lastBackDate = isset($backs["dates"][0]) ? $backs["dates"][0] : 0;
+
+                        if ($lastBackDate == 0 && $initial_date > 0)
+                            $lastBackDate = $initial_date;
+
+                        $d = 60 * 60 *24;
+                        $ts = $d * $row["account_period"] + $lastBackDate;
+
+                        if (($rs = time() - $ts) > 0)
+                            $overdue = ceil($rs / $d);
+
+                        if ($lastBackDate > 0)
+                            $finalBackDate = date("Y-m-d", $lastBackDate);
+                    }
+
+                    $row["overdue"] = $overdue;
+                    $row["lastback_date"] = $finalBackDate;
                 }
             }
 
@@ -259,13 +304,15 @@ class ARSumController extends Controller
 
         $result = $rows->toArray();
 
-        if ($sort == 1) {
-            //order by arrears
-           // return $rows->sortByDesc(function($item, $key) {return $item["arrears"];})->toArray();
-            //$result = $this->quickSortDesc($result);
-        }
+        // order
+        if ($sort == 1)
+            $result = $this->quickSortDesc($result, "balance_total");
 
+        if ($sort == 2)
+            $result = $this->quickSortDesc($result, "overdue");
 
+        if ($sort == 3)
+            $result = $this->quickSortDesc($result, "coop_total");
 
         return $result;
     }
@@ -341,11 +388,11 @@ class ARSumController extends Controller
         $result = [];
 
         foreach ($rows as $k => $v) {
-            $t = ["total" => 0, "rid" => $k,"amount" => $this->month_i,"client" => 0,"colleague" => 0];
-
+            $t = ["total" => 0, "history_total" => 0 ,"rid" => $k,"amount" => $this->month_i,"client" => 0,"colleague" => 0,"dates" => []];
+            $dates = [];
             foreach ($v as $vv) {
-                if ($vv["date"] <= $this->year_t) {
-                    $t["total"] = bcadd($t["total"], $vv["amountfor"], self::DECIMALS);
+                if ($vv["date"] < $this->year_t) {
+                    $t["history_total"] = bcadd($t["history_total"], $vv["amountfor"], self::DECIMALS);
                 }
                 else {
                     $i = (int) date("m",$vv["date"]);
@@ -360,13 +407,18 @@ class ARSumController extends Controller
                         $t["colleague"] = bcadd($t["colleague"], $vv["amountfor"],self::DECIMALS);
                     }
                 }
+
+                $t["total"] = bcadd($t["total"], $vv["amountfor"], self::DECIMALS);
+
+                if (!in_array($vv["date"], $dates))
+                    array_push($dates, $vv["date"]);
             }
 
-            //$t["amount"] = $amounts;
+            arsort($dates);
+            $t["dates"] = array_values($dates);
             array_push($result,$t);
         }
 
-        //Log::info(json_encode($result));
         return $result;
     }
 
@@ -388,24 +440,28 @@ class ARSumController extends Controller
     }
 
     /**quick sort**/
-    private function quickSortDesc(array $arr)
+    private function quickSortDesc(array $arr, $field):array
     {
         if (count($arr) <= 1)
             return $arr;
 
         $base = $arr[0];
+
+        if (!isset($base[$field]))
+            return [];
+
         $left_arr = [];
         $right_arr = [];
 
         for ($i = 1; $i < count($arr); ++$i) {
-            if ($arr[$i]["arrears"] > $base["arrears"])
+            if ($arr[$i][$field] > $base[$field])
                 array_push($left_arr,$arr[$i]);
             else
                 array_push($right_arr, $arr[$i]);
         }
 
-        $left_arr = $this->quickSortDesc($left_arr);
-        $right_arr = $this->quickSortDesc($right_arr);
+        $left_arr = $this->quickSortDesc($left_arr, $field);
+        $right_arr = $this->quickSortDesc($right_arr, $field);
 
         return array_merge($left_arr,[$base] ,$right_arr);
     }

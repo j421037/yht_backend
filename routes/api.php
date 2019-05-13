@@ -192,6 +192,10 @@ Route::group(['middleware' => 'refresh.token'], function () {
         Route::post('refund/delete', 'RefundController@del');
         /**更新退货**/
         Route::post('refund/update', 'RefundController@update');
+        /**期初**/
+        Route::post("initamount/all","InitialAmountController@all");
+        Route::post("initamount/create", "InitialAmountController@store");
+        Route::post("initamount/update", "InitialAmountController@update");
         /**数据汇总查询**/
         Route::post('arsum/query', 'ARSumController@query');
         Route::post('arsum/role', 'ARSumController1@role');

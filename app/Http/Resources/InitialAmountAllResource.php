@@ -4,7 +4,7 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class RefoundResource extends JsonResource
+class InitialAmountAllResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
@@ -15,11 +15,11 @@ class RefoundResource extends JsonResource
     public function toArray($request)
     {
         return [
-            'id'        => $this->id,
-            'amountfor'    => $this->amountfor,
-            'date'      => date('Y-m-d',$this->date),
-            'remark'    => $this->remark,
-            'created'   => $this->created_at,
+            "id"        => $this->id,
+            "amountfor" => $this->amountfor,
+            "date"      => date("Y-m-d",$this->date),
+            "remark"    => $this->remark,
+            "rid"       => $this->rid,
             "type"      => $this->type
         ];
     }

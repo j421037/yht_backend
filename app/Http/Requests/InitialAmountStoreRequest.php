@@ -4,7 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class RefundUpdateRequest extends FormRequest
+class InitialAmountStoreRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -24,11 +24,13 @@ class RefundUpdateRequest extends FormRequest
     public function rules()
     {
         return [
-            'id'        => 'required|numeric',
-            'amountfor' => 'required|numeric',
-            'date'      => 'required|string',
-            'remark'    => '',
-            "type"      => "required|numeric"
+            //
+            "id"            => "",
+            "amountfor"     => "required|numeric",
+            "date"          => "required|string",
+            "type"          => "required|numeric",
+            "remark"        => "",
+            "rid"           => "required|numeric",
         ];
     }
 }

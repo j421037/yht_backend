@@ -17,7 +17,8 @@
         "phpoffice/phpexcel": "^1.8",
         "tymon/jwt-auth": "^0.5.12",
         "yadakhov/insert-on-duplicate-key": "^1.2",
-        "zizaco/entrust": "^1.9"
+        "zizaco/entrust": "^1.9",
+        "doctrine/dbal": "v2.9.2"
     },
     "require-dev": {
         "filp/whoops": "^2.0",

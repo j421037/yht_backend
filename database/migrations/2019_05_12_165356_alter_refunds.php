@@ -16,6 +16,7 @@ class AlterRefunds extends Migration
         //
         Schema::table("refunds", function(Blueprint $table) {
             $table->unsignedTinyInteger("type")->default(0)->comment("类型");
+            $table->renameColumn("refund","amountfor");
         });
     }
 

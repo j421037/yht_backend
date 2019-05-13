@@ -6,6 +6,7 @@
 */
 namespace App\Http\Controllers;
 
+use App\InitialAmount;
 use Auth;
 use JWTAuth;
 use App\User;
@@ -29,52 +30,73 @@ class RefundController extends Controller
     /**总记录数**/
     private $total;
 
-    private  $user;
+    private $user;
 
     private $hasRole;
+    private $model;
+    private $initialAmount;
 
-    public function __construct(User $user)
+    public function __construct(User $user, InitialAmount $initialAmount, Refund $refund)
     {
         $this->user = $user;
+        $this->model = $refund;
+        $this->initialAmount = $initialAmount;
         $this->hasRole = $this->checkRole($this->getUser()->id);
     }
 
     public function store(RefundStoreRequest $request)
     {
     	try {
+            if (!$this->hasRole)
+                throw new \Exception("没有权限操作该对象");
 
-    		$data = $request->all();
-    		$data['date'] = strtotime($data['date']);
+            $data = $request->all();
+            $data["date"] = strtotime($data["date"]);
+            $initial = $this->initialAmount->where(["rid" => $request->rid])->orderBy("date","desc")->first();
 
-    		if (Refund::create($data)) {
-    			return response(['status' => 'success'], 200);
-    		}
+    	    if ($initial && $initial->date >= $data["date"])
+    	        throw new \Exception("退货单必须在期初日期 ".date("Y-m-d",$initial->date)." 之后");
 
-    	} catch(QueryException $e) {
+    	    $result = $this->model->create($data);
 
+    	    if ($result)
+    	        return response(["status" => "success"], 201);
+    	}
+    	catch(QueryException $e) {
     		return response(['status' => 'error', 'errmsg' => $e->getMessage()], 200);
     	}
+        catch(\Exception $e) {
+            return response(['status' => 'error', 'errmsg' => $e->getMessage()], 200);
+        }
     }
 
     public function update(RefundUpdateRequest $request)
     {
-        $model = Refund::find($request->id);
+        try {
+            if (!$this->hasRole)
+                throw new \Exception("没有权限操作该对象");
 
-        if ($model && $this->hasRole) {
-            $model->date    = strtotime($request->date);
-            $model->refund  = $request->refund;
-            $model->remark  = $request->remark;
+            $row = $this->model->find($request->id);
+            $date = strtotime($request->date);
+            $initial = $this->initialAmount->where(["rid" => $request->rid])->orderBy("date","desc")->first();
 
-            try {
-                if ($model->save()) {
-                    return response(['status' => 'success']);
-                }
-            } catch (QueryException $e) {
-                return response(['status' => $e->getMessage()]);
-            }
+            if (!$row)
+                throw new \Exception("目标不存在");
+            if ($date <= $initial->date)
+                throw new \Exception("退货单必须在期初日期 ".date("Y-m-d",$initial->date)." 之后");
 
-        } else {
-            return response(['status' => 'error', 'errmsg' => '该数据不存在']);
+            $row->amountfor = $request->amountfor;
+            $row->date = $date;
+            $row->remark = $request->remark;
+
+            if ($row->save())
+                return response(["status" => "success"], 200);
+        }
+        catch(QueryException $e) {
+            return response(['status' => 'error', 'errmsg' => $e->getMessage()], 200);
+        }
+        catch(\Exception $e) {
+            return response(['status' => 'error', 'errmsg' => $e->getMessage()], 200);
         }
     }
 

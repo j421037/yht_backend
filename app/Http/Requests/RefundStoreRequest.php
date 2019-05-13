@@ -25,9 +25,9 @@ class RefundStoreRequest extends FormRequest
     {
         return [
             'id'        => '',
-            'cust_id'   => 'required|numeric',
-            'pid'       => 'required|numeric',
-            'refund'    => 'required|numeric',
+            'rid'       => 'required|numeric',
+            'type'      => 'required|numeric',
+            'amountfor' => 'required|numeric',
             'date'      => 'required|string',
             'remark'    => ''
         ];
