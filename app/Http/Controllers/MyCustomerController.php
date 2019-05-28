@@ -5,7 +5,6 @@
 */
 namespace App\Http\Controllers;
 
-use Auth;
 use App\User;
 use App\Customer;
 use App\CustomerNote;
@@ -16,7 +15,14 @@ use App\Http\Resources\PersonalCustomerResource;
 
 class MyCustomerController extends Controller
 {
-    public function test(Request $request) 
+    protected $customer;
+
+    public function __construct(Customer $customer)
+    {
+        $this->customer = $customer;
+    }
+
+    public function test(Request $request)
     {
         $data = User::find(Auth::user()->id)->customer;
 
@@ -27,37 +33,14 @@ class MyCustomerController extends Controller
     */
     public function list(Request $request)
     {
-        // return $request->offset;
-        // DB::enableQueryLog();
-        $list = User::find( Auth::user()->id)
-                        ->customer()
-                        ->offset($request->offset)
-                        ->limit($request->limit)
-                        ->groupBy('id')
-                        ->groupBy('user_id')
-                        ->orderBy('updated_at', 'desc')
-                        ->get();
+        $user_id = $this->getUserId();
+        $accept = (int) $request->accept;
 
-        // $data = PersonalCustomerResource::collection($data)->sortByDesc('sort')->values()->all();
-        $data = PersonalCustomerResource::collection($list);
+        $model = $this->customer->where(["user_id" => $user_id, "accept" => $accept]);
+        $customers = $model->orderBy("updated_at", "desc")->limit($request->limit)->offset($request->offset)->get();
+        $total = $model->count();
 
-        $count = Customer::where(['user_id' => Auth::user()->id])->count();
-        
-        $accept = Customer::where(['user_id' => Auth::user()->id, 'accept' => 1])->count();
-
-        $loadAll = false;
-
-        $nextOne = $request->offset + $request->limit;
-
-        $next = Customer::where(['user_id' => Auth::user()->id])->select(['id','name','demand'])->offset($nextOne)->limit($request->limit)->orderBy('id', 'desc')->get();
-
-        if ( count($list) < 1 || count($next) < 1) {
-
-            $loadAll = true;
-        } 
-
-
-    	return response(['data' => $data,'accept' => $accept, 'count' => $count,'loadAll' => $loadAll, 'limit' => $request->limit, 'offset' => $request->offset], 200);
+        return response(["data" => PersonalCustomerResource::collection($customers),"total" => $total], 200);
     }
 
     /**
@@ -65,15 +48,15 @@ class MyCustomerController extends Controller
     */
     public function store(Request $request) 
     {
-    	
+    	$user_id = $this->getUserId();
     	$customer = Customer::find($request->id);
 
-    	$userCustomerCount = User::find( Auth::user()->id)->customer()->count();//领取的客户数
+    	$userCustomerCount = User::find( $user_id)->customer()->count();//领取的客户数
 
         //publish == 1 表示已公开
     	if (Empty($customer->user_id) && $customer->publish == 1) {
 
-    		$customer->user_id = Auth::user()->id;
+    		$customer->user_id = $user_id;
 
             DB::beginTransaction();
 
@@ -101,15 +84,16 @@ class MyCustomerController extends Controller
     {
 
         DB::beginTransaction();
+        $user_id = $this->getUserId();
 
         try {
 
-            $result = Customer::where(['id' => $request->id, 'user_id' => Auth::user()->id, 'accept' => 0])->update(['user_id' => null]);
+            $result = Customer::where(['id' => $request->id, 'user_id' => $user_id, 'accept' => 0])->update(['user_id' => null]);
 
-            $log = CustomerNote::create(['user_id' => Auth::user()->id, 'customer_id' => $request->id, 'action' => 2]);
+            $log = CustomerNote::create(['user_id' => $user_id, 'customer_id' => $request->id, 'action' => 2]);
 
             //释放理由
-            $reason = CustomerFree::create(['customer_id' => $request->id,'user_id' => Auth::user()->id, 'reason' => $request->reason]);
+            $reason = CustomerFree::create(['customer_id' => $request->id,'user_id' => $user_id, 'reason' => $request->reason]);
 
             if ($result != false && $log != false && $reason != false) {
                 DB::commit();
@@ -129,12 +113,13 @@ class MyCustomerController extends Controller
     public function accept(Request $request)
     {
         DB::beginTransaction();
+        $user_id = $this->getUserId();
 
         try {
 
-            $result = Customer::where(['user_id' => Auth::user()->id, 'id' => $request->id])->update(['accept' => 1]);
+            $result = Customer::where(['user_id' => $user_id, 'id' => $request->id])->update(['accept' => 1]);
             //添加领取日志
-            $log = CustomerNote::create(['user_id' => Auth::user()->id, 'customer_id' => $request->id, 'action' => 1]);
+            $log = CustomerNote::create(['user_id' => $user_id, 'customer_id' => $request->id, 'action' => 1]);
 
             if ($result != false && $log != false) {
                 DB::commit();

@@ -34,7 +34,7 @@ class CustomerPubResource extends JsonResource
             'creator'   => $this->_creator($this->create_user_id),
             // 'sort'      => $this->_sort($this->id)    
             'sort'      => $this->sort,
-            'recount'   => $this->_receviceCount($this->id)  
+            'recount'   => $this->_receviceCount($this->id),
         ];
     }
 
@@ -93,4 +93,6 @@ class CustomerPubResource extends JsonResource
     {
         return CustomerNote::where(['customer_id' => $id, 'action' => 0])->count();
     }
+
+
 } 

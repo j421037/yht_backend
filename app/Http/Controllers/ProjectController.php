@@ -125,8 +125,10 @@ class ProjectController extends Controller
         $data['user_id'] = $this->getUserId();
 
     	try {
-			if (Project::where(['name' => $request->name])->first()) {
-				return response(['status' => 'error', 'errmsg' => '项目已存在'], 200);
+    	    $result = Project::where(['name' => $request->name])->first();
+
+			if ($result) {
+				return response(['status' => 'error', 'errmsg' => '项目已存在', 'id' => $result->id], 200);
 			}
 
             $result = Project::create($data);

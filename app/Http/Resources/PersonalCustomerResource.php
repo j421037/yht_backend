@@ -7,6 +7,8 @@ use App\User;
 use App\Region;
 use App\Brand;
 use App\Department;
+use App\RealCustomer;
+use App\EnumberateItem;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 class PersonalCustomerResource extends JsonResource
@@ -38,7 +40,8 @@ class PersonalCustomerResource extends JsonResource
             'department'    => $this->department_id ?? 0,
             'creator'       => $this->_creator($this->create_user_id),
             'sort'          => $this->sort,
-            'action_date'   => $this->updated_at->format('Y-m-d H:i:s')
+            'action_date'   => $this->updated_at->format('Y-m-d H:i:s'),
+            "status"        => $this->_status($this->accept, $this->real_customer_id)
         ];
     }
 
@@ -55,6 +58,18 @@ class PersonalCustomerResource extends JsonResource
         if ($id) {
             
             return Brand::find($id)->name;
+        }
+    }
+
+    protected function _status($accept, $rid) {
+        if (!$accept) {
+            return "";
+        }
+
+        $realCustomer = RealCustomer::find($rid);
+
+        if ($realCustomer) {
+            return EnumberateItem::find($realCustomer->type)->name;
         }
     }
 

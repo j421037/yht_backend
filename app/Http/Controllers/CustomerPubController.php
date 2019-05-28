@@ -6,63 +6,90 @@
 
 namespace App\Http\Controllers;
 
-use Auth;
-use App\Customer;
+use App\RealCustomer;
 use App\User;
+use App\Customer;
+use Doctrine\DBAL\Query\QueryException;
 use Illuminate\Http\Request;
 use App\Http\Resources\CustomerPubResource;
-use Illuminate\Support\Facades\DB; 
+use Illuminate\Support\Facades\DB;
 
 class CustomerPubController extends Controller
 {
-	/**
+    private $user;
+    private $customer;
+    private $realCustomer;
+
+    public function __construct(User $user, Customer $customer, RealCustomer $realCustomer)
+    {
+        $this->user = $user;
+        $this->customer = $customer;
+        $this->realCustomer = $realCustomer;
+    }
+
+    /**
 	* 资源列表
 	*/
     public function list(Request $request)
     {
-        $departmentId = null;
+        $user_id = $this->getUserId();
+        $limit = $request->limit or 0;
+        $offset = $request->offset or 0;
+        $loadAll = false;
 
-    	if ($request->type != 0) {
+        $customer = $this->customer->where(["publish" => 1,"accept" => 0, "user_id" => null]);
+        $customers = $customer->limit($limit)->offset($offset)->orderBy("updated_at", "desc")->get();
+        $total = $customer->count();
 
-            $user = User::find(Auth::user()->id);
-            $departmentId = $user->department_id;
+        if (($limit + $offset) > $total) {
+            $loadAll = true;
         }
 
-        
-        $data = $this->getData($request->offset, $request->limit, $departmentId);
-    	
-    	$loadAll = false;
-
-    	$nextOne = $request->offset + $request->limit;
-
-    	$next =$this->getData($nextOne, $request->limit, $departmentId);
-
-
-    	if ( count($data) < 1 || count($next) < 1) {
-
-    		$loadAll = true;
-    	} 
-
-        // 把resource转换成实体属性
-        // $json = response()->json(CustomerPubResource::collection($data));
-        // //getcontent 获取response中的content 属性
-        // $list = json_decode($json->getContent(),true);
-        // //创建一个collection类 然后再次排序
-        // $collect = collect($list);
-
-    	return response(['data' => CustomerPubResource::collection($data)->sortByDesc('sort'), 'loadAll' => $loadAll, 'next' => $next], 200);
+    	return response(['data' => CustomerPubResource::collection($customers), 'loadAll' => $loadAll,"total" => $total,"limit" => $limit,"offset" => $offset], 200);
     }
 
-    protected function getData( $offset, $limit, $departmentId = null)
+    /**
+     * 客户升级
+     */
+    public function upgrade(Request $request)
     {
-        $data = Customer::where(['customers.user_id' => null, 'customers.publish' => 1, 'customers.department_id' => $departmentId,'customer_notes.action' => 3])
-                            ->join('customer_notes','customers.id', '=', 'customer_notes.customer_id')
-                            ->select('customers.*','customer_notes.created_at as sort')
-                            ->orderBy('sort', 'desc')
-                            ->offset($offset)
-                            ->limit($limit)
-                            ->get();
+        DB::beginTransaction();
 
-        return $data;
+        $data = $request->all();
+        $data["user_id"] = $this->getUserId();
+
+        try {
+
+            $r0 = $this->realCustomer->where(['name' => $request->name, 'phone' => $request->phone])->first();
+
+            if ($r0) {
+                throw new \Exception("客户已经存在");
+            }
+
+            $r1 = $this->realCustomer->where(['name' => $request->name,'work_scope' => $request->work_scope, "pid" => $request->pid])->first();
+
+            if ($r1) {
+                throw new \Exception("施工范围客户已存在");
+            }
+
+            $realCustomer = $this->realCustomer->create($data);
+            $customer = $this->customer->find($request->customer_id);
+            $customer->real_customer_id = $realCustomer->id;
+            $customer->real_project_id = $realCustomer->pid;
+
+            if ($customer->save()) {
+                DB::commit();
+
+                return response(["status" => "success"], 201);
+            }
+        }
+        catch (QueryException $qe) {
+            DB::rollBack();
+            return response(["status" => "error","errmsg" => $qe->getMessage()], 200);
+        }
+        catch(\Exception $e) {
+            response(['status' => 'error', 'errmsg' => $e->getMessage()], 200);
+        }
     }
+
 }

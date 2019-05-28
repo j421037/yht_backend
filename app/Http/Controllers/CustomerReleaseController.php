@@ -6,6 +6,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Refund;
 use Miao;
 use Auth;
 use App\User;
@@ -163,14 +164,13 @@ class CustomerReleaseController extends Controller
 
     }
 
-    public function publishTest()
+    public function delete(Request $request)
     {
-        $user = User::find(58);
+        if (!$this->isAdmin())
+            return response(["status" => "error","errmsg" => "没有权限操作该对象"], 200);
 
-        $chatid = BaseData::where(['name' => 'customerChatId'])->first()->value;
+        Customer::destroy($request->id);
 
-        $chatAddUser = Miao::ChatAddUser($chatid, [$user->phone]);
-      
-        return response($chatAddUser);
+        return response(["status" => "success"], 200);
     }
 }

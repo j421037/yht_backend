@@ -76,9 +76,11 @@ Route::group(['middleware' => 'refresh.token'], function () {
         Route::post('customer/post/update', 'CustomerReleaseController@update');
         Route::post('customer/manager/list', 'CustomerReleaseController@list');
         Route::post('customer/publish', 'CustomerReleaseController@publish');
+        Route::post("customer/delete" , "CustomerReleaseController@delete");
         Route::post('customer/publish/test', 'CustomerReleaseController@publishTest');
 
         Route::post('customer/public/list', 'CustomerPubController@list');
+        Route::post('customer/public/upgrade', 'CustomerPubController@upgrade');
 
         Route::post('customer/public/test', 'CustomerPubController@test');
 
@@ -88,6 +90,7 @@ Route::group(['middleware' => 'refresh.token'], function () {
         Route::post('customer/get/comments', 'CustomerCommentsController@comments');
         Route::post('customer/free/one', 'MyCustomerController@free');
         Route::post('customer/accept/one', 'MyCustomerController@accept');
+
 
         Route::post('customer/get/init', 'CustomerController@init');
 
