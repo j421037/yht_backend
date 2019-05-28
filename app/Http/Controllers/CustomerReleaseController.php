@@ -85,8 +85,19 @@ class CustomerReleaseController extends Controller
     */
     public function list(Request $request)
     {
-        $list = Customer::offset($request->offset)->limit($request->limit)->orderBy('id','desc')->get();
-        $count = Customer::count();
+        $status = $request->status or 0;
+        $where = [];
+
+        if ($status == 1) {
+            $where = [["user_id","<>",null]];
+        }
+
+        if ($status == 2) {
+            $where = ["user_id" => null];
+        }
+
+        $list = Customer::where($where)->offset($request->offset)->limit($request->limit)->orderBy('id','desc')->get();
+        $count = Customer::where($where)->count();
         return response(['data' => CustomerResource::collection($list), 'total' => $count,'offset' => $request->offset, 'limit' => $request->limit], 200);
     }
 
