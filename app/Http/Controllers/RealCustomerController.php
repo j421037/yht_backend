@@ -337,7 +337,7 @@ class RealCustomerController extends Controller
         try {
             $realCustomer->name = trim($request->name);
 			$realCustomer->phone = trim($request->phone);
-			$realCustomer->project_type = $request->project_type;
+			$realCustomer->type = $request->type;
 			$realCustomer->contract = $request->contract;
 			$realCustomer->account_period = $request->account_period;
 			$realCustomer->tax = trim($request->tax);
