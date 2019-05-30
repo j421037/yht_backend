@@ -116,8 +116,8 @@ class RealCustomerObserver {
     {
         // is coop customer
         $enuitem = $this->enumItem->find($realCustomer->type);
-
-        if (!isset($enuitem->name) && $enuitem->name != "合作客户")
+        Log::debug("enuitem: ". json_encode($enuitem));
+        if (!isset($enuitem->name) || $enuitem->name != "合作客户")
             return ;
 
         $project = $this->project->find($realCustomer->pid);
