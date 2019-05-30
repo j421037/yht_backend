@@ -36,8 +36,16 @@ class CustomerPubController extends Controller
         $limit = $request->limit or 0;
         $offset = $request->offset or 0;
         $loadAll = false;
+        $where = ["publish" => 1,"accept" => 0, "user_id" => null];
 
-        $customer = $this->customer->where(["publish" => 1,"accept" => 0, "user_id" => null]);
+        if ($request->type) {
+            $where["department_id"] = $this->getDepartId();
+        }
+        else {
+            $where["department_id"] = null;
+        }
+
+        $customer = $this->customer->where($where);
         $customers = $customer->limit($limit)->offset($offset)->orderBy("updated_at", "desc")->get();
         $total = $customer->count();
 

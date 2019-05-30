@@ -81,7 +81,8 @@ class CustomerReleaseController extends Controller
 
     /**
     *返回所有的客户列表
-    *
+    * 管理员返回所有
+     *  部门返回部门自己发布的
     */
     public function list(Request $request)
     {
@@ -94,6 +95,10 @@ class CustomerReleaseController extends Controller
 
         if ($status == 2) {
             $where = ["user_id" => null];
+        }
+
+        if (!$this->isAdmin()) {
+            $where["department_id"] = $this->getDepartId();
         }
 
         $list = Customer::where($where)->offset($request->offset)->limit($request->limit)->orderBy('id','desc')->get();
