@@ -24,7 +24,7 @@ class ArticleCategoryStoreRequest extends FormRequest
     public function rules()
     {
         return [
-            'id'        => 'required',
+            'id'        => '',
             'name'      => 'required',
             'module_id' => ""
         ];
