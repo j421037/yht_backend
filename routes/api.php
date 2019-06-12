@@ -201,7 +201,7 @@ Route::group(['middleware' => 'refresh.token'], function () {
         Route::post("initamount/update", "InitialAmountController@update");
         /**数据汇总查询**/
         Route::post('arsum/query', 'ARSumController@query');
-        Route::post('arsum/role', 'ARSumController1@role');
+        Route::post('arsum/role', 'ARSumController@role');
         Route::post('artype/store', 'ArTypeController@store');
         Route::post('artype/index', 'ArTypeController@index');
         //同步金蝶销售订单

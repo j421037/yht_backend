@@ -2,14 +2,18 @@
 
 namespace App\Http\Controllers;
 
+
 use Log;
 use App\Refund;
+use App\User;
+use App\Assistant;
 use App\AReceivebill;
 use App\ArrearsData;
 use App\AReceivable;
 use App\FilterProgram;
 use App\InitialAmount;
 use Illuminate\Http\Request;
+use App\Http\Resources\ARSumRoleResource;
 use Illuminate\Database\Eloquent\Collection;
 
 class ARSumController extends Controller
@@ -35,7 +39,8 @@ class ARSumController extends Controller
     protected $receivebill;
     protected $refund;
     protected $initial;
-
+    protected $user;
+    protected $assistant;
     /**
      *  date
      */
@@ -51,7 +56,9 @@ class ARSumController extends Controller
         AReceivable $receivable,
         AReceivebill $receivebill,
         Refund $refund,
-        InitialAmount $initialAmount
+        InitialAmount $initialAmount,
+        User $user,
+        Assistant $assistant
     )
     {
         $this->arrearData = $arrearsData;
@@ -60,6 +67,8 @@ class ARSumController extends Controller
         $this->receivebill = $receivebill;
         $this->refund = $refund;
         $this->initial = $initialAmount;
+        $this->user = $user;
+        $this->assistant = $assistant;
 
         $this->year = date("Y",time());
         $this->month = date("m", time());
@@ -69,7 +78,29 @@ class ARSumController extends Controller
             $this->month_i[$i] = 0;
         }
     }
+    /**role**/
+    public function role(Request $request)
+    {
+        $result = [];
+        $users = [];
+        $user = $this->user->find($this->getUserId());
+        $hasRole = false;
 
+        if ($this->isAdmin()) {
+            $users = $this->user->all();
+            $hasRole = true;
+        }
+        else if ($this->isAssistant()) {
+            $users = $this->user->where(["department_id" => $user->deaprtment_id])->get();
+            $hasRole = true;
+        }
+
+        if (!$hasRole) {
+            $users = $user;
+        }
+
+        return response(["user" => ARSumRoleResource::collection($users), "hasRole" => $hasRole], 200);
+    }
     /**
      * query arrears
      */
