@@ -5,9 +5,8 @@
 
 namespace App\Http\Controllers;
 
-
-use Auth;
 use Miao;
+use Hash;
 use App\User;
 use App\Role;
 use App\DoLog;
@@ -208,7 +207,7 @@ class UserManagerController extends UserBaseController
 
         if (!$user)
             return response(["errmsg" => "目标不存在","status" => "error"], 200);
-        $user->password = $this->hash->make($request->password);
+        $user->password = $this->hash->make(trim($request->passwd));
 
         if ($user->save())
             return response(["status" => "success"], 201);
