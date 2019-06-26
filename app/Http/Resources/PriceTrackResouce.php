@@ -18,12 +18,18 @@ class PriceTrackResouce extends JsonResource
     {
         return [
             "id"            => $this->id,
-            "date"          => date("Y-m-d",$this->date),
+            "date"          => date("Y-m-d H:i:s",$this->date),
             "remark"        => $this->remark,
             "category_name" => ProductCategory::find($this->category)->name,
             "brand_name"    => ProductsManager::find($this->product_brand)->brand_name,
-            "operate"       => $this->operate,
-            "change_val"    => $this->change_val
+            "data"          => [
+                [
+                    "freight" => $this->freight,
+                    "remark"  => $this->remark,
+                    "operate"       => $this->operate,
+                    "change_val"    => $this->change_val,
+                ]
+            ]
         ];
     }
 }

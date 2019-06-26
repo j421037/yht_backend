@@ -5,6 +5,7 @@
 */
 namespace App\Http\Controllers;
 
+
 use Log;
 use App\Project;
 use App\IndexStatistics;
@@ -13,9 +14,11 @@ use App\AReceivebill;
 use App\ArrearsData;
 use App\InitialAmount;
 use App\Refund;
+use App\PersonTarget;
 use Illuminate\Http\Request;
 use Illuminate\Database\QueryException;
 use App\Http\Resources\IndexResource;
+use App\Http\Requests\UpdateTargetRequest;
 
 class IndexController extends Controller
 {
@@ -29,6 +32,7 @@ class IndexController extends Controller
     protected $year_t;
     protected $month;
     protected $monthly = [];
+    protected $target;
 
 	public function __construct(
 	    IndexStatistics $index,
@@ -36,9 +40,11 @@ class IndexController extends Controller
         AReceivable $arble,
         AReceivebill $arbill,
         InitialAmount $initialAmount,
-        Refund $refund
+        Refund $refund,
+        PersonTarget $target
     )
     {
+        $this->target = $target;
         $this->indexStatis = $index;
         $this->arble = $arble;
         $this->arbill = $arbill;
@@ -310,5 +316,30 @@ class IndexController extends Controller
         catch (QueryException $e) {
             return response(['status' => 'error', 'errmsg' => $e->getMessage()]);
         }
+    }
+
+    //更新个人目标业绩
+    public function UpdateTarget(UpdateTargetRequest $request)
+    {
+        $model = $this->target->firstOrCreate(["user_id" => $this->getUserId(), "year" => $request->year])->first();
+
+        $model->target = $request->target;
+        $model->save();
+
+        return response(["status" => "success"], 201);
+    }
+
+    public function LoadPersonTarget(Request $request)
+    {
+        $year = date("Y",time());
+        $item = $this->target->where(["user_id" => $this->getUserId(), "year" => $year])->first();
+        $data = ["target" => 0, "year" => $this->year_t * 1000];
+
+        if ($item) {
+
+            $data["target"] = $item->target;
+        }
+
+        return response(["status" => "success", "data" => $data], 200);
     }
 }

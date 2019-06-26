@@ -5,6 +5,7 @@
 
 namespace App\Http\Controllers;
 
+
 use Auth;
 use Miao;
 use App\User;
@@ -12,13 +13,23 @@ use App\Role;
 use App\DoLog;
 use App\BaseData;
 use App\Permission;
+use Illuminate\Hashing\HashManager;
 use Illuminate\Http\Request;
 use App\Http\Resources\UserManagerResource;
 // use Illuminate\Support\Facades\DB; 
 use App\Http\Resources\NavigationResource;
+use App\Http\Requests\UserManagementRepwdRequest;
 
 class UserManagerController extends UserBaseController
 {
+    private $user;
+    private $hash;
+    public function __construct(User $user, HashManager $hash)
+    {
+        $this->user = $user;
+        $this->hash = $hash;
+    }
+
     //初始化页面配置数据
     public function init() 
     {
@@ -191,4 +202,15 @@ class UserManagerController extends UserBaseController
 
     }
 
+    public function ResetPwd(UserManagementRepwdRequest $request)
+    {
+        $user = $this->user->find($request->uid);
+
+        if (!$user)
+            return response(["errmsg" => "目标不存在","status" => "error"], 200);
+        $user->password = $this->hash->make($request->password);
+
+        if ($user->save())
+            return response(["status" => "success"], 201);
+    }
 }

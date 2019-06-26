@@ -40,4 +40,16 @@ class ProductCategoryController extends Controller
     {
         return response(['status' => "success", "data" => ProductCategoryListResource::collection($this->category->with(['childrens'])->get())], 200);
     }
+
+    public function update(ProductCategoryStoreRequest $request)
+    {
+        $category = $this->category->find($request->id);
+
+        if (!$category)
+            return response(["status" => "error", "errmsg" => "目标不存在"], 200);
+        $category->name = $request->name;
+        $category->save();
+
+        return response(["status" => "success"], 201);
+    }
 }

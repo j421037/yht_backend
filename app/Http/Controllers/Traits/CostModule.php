@@ -20,12 +20,19 @@ trait CostModule {
      *
      * @return $data rows
      */
-    public function getPriceData(DatabaseManager $db, ProductsManager $manager) :array
+    public function getPriceData(DatabaseManager $db, ProductsManager $manager, $version = null) :array
     {
         $groupFields = $this->groupField($manager->columns);
 
         $field = collect($groupFields)->pluck('value')->toArray();
-        $sql = "SELECT * FROM (SELECT * FROM {$manager->table} ORDER BY `created_at` DESC LIMIT 0,99999999999) AS T0 GROUP BY ".implode(",",$field);
+        $sql = "SELECT * FROM (SELECT * FROM {$manager->table} ";
+
+        if ($version) {
+            $sql .= " WHERE version = {$version} ";
+        }
+
+        $sql .= " ORDER BY `created_at` DESC LIMIT 0,99999999999) AS T0 GROUP BY ".implode(",",$field);
+
         $data = $db->select($sql);
 
         foreach ($data as $v)

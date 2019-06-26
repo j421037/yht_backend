@@ -30,6 +30,7 @@ class ProductPriceUpdateRequest extends FormRequest
             "version_str"   => "required|alpha_dash",
             "rows"      => "required|array",
             "fileid"     => "",
+            "freight"   => ""
         ];
     }
 }

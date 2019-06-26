@@ -27,6 +27,9 @@ Route::group(['middleware' => 'refresh.token'] ,function() {
     /**导出价格表**/
     Route::get("makeoffer/download/pdf","ProductMakeOfferController@DownloadPDF");
     Route::get("makeoffer/view/pdf","ProductMakeOfferController@ViewPDF");
+
+    //附件在线预览
+    Route::get("attr/preview", "AttrPreviewController@PriceFileView");
 });
 
 

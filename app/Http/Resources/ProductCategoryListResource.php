@@ -66,7 +66,7 @@ class ProductCategoryListResource extends JsonResource
 
         if ($row)
         {
-            return "当前价格版本: ".$row->version." ，更新于: ".date("Y-m-d",$row->date)." ， 备注: ".$row->remark;
+            return sprintf("当前价格版本: %s, 更新于: %s, 运费: %s元, 备注: %s", $row->version, date("Y-m-d H:i:s", $row->date), $row->freight, $row->remark);
         }
 
         return "暂无数据";

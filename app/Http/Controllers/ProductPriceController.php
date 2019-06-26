@@ -48,18 +48,15 @@ class ProductPriceController extends Controller
      */
     public function PriceList(ProductPriceListRequest $request)
     {
-        $row = $this->manager->find($request->id);
-
-        return response(["status" => "success",
-                        "data" => [
-                            "id" => $row->id,
-                            "column" => $this->getColumn($row->columns),
-                            "rows" => $this->getPriceData($this->db,$row)
-                            ]
-                        ]);
+        return response(["status" => "success","data" => $this->QueryPrice($request->id)]);
     }
 
+    private function QueryPrice($product_id, $version = null) :array
+    {
+        $row = $this->manager->find($product_id);
 
+        return ["id" => $row->id,"column" => $this->getColumn($row->columns), "rows" => $this->getPriceData($this->db, $row, $version)];
+    }
 
     /**
      * change brand price
@@ -86,6 +83,7 @@ class ProductPriceController extends Controller
         $version->date = strtotime($request->date);
         $version->remark = $request->remark;
         $version->atta_id = $fileCollect;
+        $version->freight = $request->freight ?? 0;
 
         return response($this->BatchUpdate((Array)$version,$request->rows), 200);
     }
@@ -208,6 +206,9 @@ class ProductPriceController extends Controller
                     $row["version"] = $model->id;
                     $row["version_l"] = $model->version;
                     $row["created_at"] = time();
+
+                    if ($model->freight > 0)
+                        $row["price"] += $model->freight;
                 }
 
                 $result = $this->db->table($manager->table)->insert($rows);
@@ -225,5 +226,18 @@ class ProductPriceController extends Controller
         }
     }
 
+    /**history price**/
+    public function HistoryPrice(Request $request)
+    {
+        if (!$request->vid)
+            return response(["status" => "error","errmsg" => "目标资源不存在"], 200);
 
+        //版本号
+        $version = $this->priceVersion->find($request->vid);
+
+        return response(["status" => "success",
+                        "data" => $this->QueryPrice($version->product_brand, $version->id),
+                        "notice" => "发布于:".$version->created_at.", 运费: ".$version->freight.", 当前价格已弃用"
+                ]);
+    }
 }

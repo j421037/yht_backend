@@ -27,6 +27,6 @@
 <body>
 </body>
 <script>
-    window.location.href = 'http://view.officeapps.live.com/op/view.aspx?src={{$url}}';
+    window.location.href = 'https://view.officeapps.live.com/op/view.aspx?src={{$url}}';
 </script>
 </html>

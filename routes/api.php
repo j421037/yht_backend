@@ -62,6 +62,7 @@ Route::group(['middleware' => 'refresh.token'], function () {
         Route::post('user/import', 'AuthController@import');
         Route::post('user/disable', 'AuthController@UserDisable');
         Route::post('user/delete', 'AuthController@UserDelete');
+        Route::post("user/management/reset","UserManagerController@ResetPwd");
 
         Route::post('brand/post/one', 'BrandController@store');
         // Route::post('brand/get/all', 'BrandController@all');
@@ -237,6 +238,7 @@ Route::group(['middleware' => 'refresh.token'], function () {
 
         /**产品管理**/
         Route::post("products/store", "ProductCategoryController@store");
+        Route::post("products/update", "ProductCategoryController@update");
         Route::post("products/list", "ProductCategoryController@CategoryList");
         Route::post("products/table/create", "ProductManagerController@store");
         Route::post("products/table/list", "ProductManagerController@PriceTableList");
@@ -246,12 +248,15 @@ Route::group(['middleware' => 'refresh.token'], function () {
         Route::post("products/prices/fastupdate","ProductPriceController@FastUpdate");
         Route::post("products/prices/version","ProductPriceController@PriceVersionList");
         Route::post("products/prices/info", "ProductPriceController@PriceTrack");
+        Route::post("products/prices/history", "ProductPriceController@HistoryPrice");
         Route::post("cost/role","CostController@rule");
         /**单品牌报价**/
         Route::post("products/params","ProductMakeOfferController@params");
         Route::post("products/offers","ProductMakeOfferController@OfferList");
         Route::post("products/offer/store", "ProductMakeOfferController@store");
         Route::post("products/offer/modify", "ProductMakeOfferController@modify");
+
+
     });
     /**不需要验证权限**/
     Route::post('bindattr/one', 'BindAttrController@one');
@@ -287,6 +292,9 @@ Route::get('index/data', 'IndexController@getData');
 Route::post('index/sales', 'IndexController@getSales');
 Route::post('index/received', 'IndexController@getReceived');
 Route::post('index/debt', 'IndexController@getDebt');
+/**首页**/
+Route::post("index/update/target", "IndexController@UpdateTarget");
+Route::post("index/target", "IndexController@LoadPersonTarget");
 
 Route::post('index/user', 'IndexController@users');
 
