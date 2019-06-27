@@ -18,7 +18,7 @@ class PriceTrackResouce extends JsonResource
     {
         return [
             "id"            => $this->id,
-            "date"          => date("Y-m-d H:i:s",$this->date),
+            "date"          => $this->created_at->format("Y-m-d H:i:s"),
             "remark"        => $this->remark,
             "category_name" => ProductCategory::find($this->category)->name,
             "brand_name"    => ProductsManager::find($this->product_brand)->brand_name,

@@ -65,7 +65,8 @@ class ProductPriceController extends Controller
      */
     public function update(ProductPriceUpdateRequest $request)
     {
-        $version = new \StdClass;
+//        $version = new \StdClass;
+
         $fileCollect = $request->fileid;
 
         if (is_array($fileCollect) && count($fileCollect) > 0)
@@ -76,7 +77,7 @@ class ProductPriceController extends Controller
         else {
             $fileCollect = "";
         }
-
+        $version = $this->priceVersion->newInstance();
         $version->category = $request->category;
         $version->product_brand = $request->brand;
         $version->version = $request->version_str;
@@ -84,8 +85,9 @@ class ProductPriceController extends Controller
         $version->remark = $request->remark;
         $version->atta_id = $fileCollect;
         $version->freight = $request->freight ?? 0;
+        $version->standard = 1;
 
-        return response($this->BatchUpdate((Array)$version,$request->rows), 200);
+        return response($this->BatchUpdate($version->toArray(),$request->rows, $version->freight), 200);
     }
 
     /**
@@ -95,15 +97,18 @@ class ProductPriceController extends Controller
      **/
     public function FastUpdate(FastUpdateRequest $request)
     {
-
         //find table name from id
         $manager = $this->manager->find($request->product_brand);
         $version = $this->priceVersion->find($request->version_id);
         $rows = $this->db->table($manager->table)->where(["version" => $request->version_id])->get();
+
+        $oldFreight = $version->freight;
         $version->version = $request->new_version;
         $version->change_val = $request->discount;
         $version->remark = $request->remark;
         $version->operate = $request->operate;
+        $version->freight = $request->freight;
+        $version->standard = 0;
 
         if ($manager->method == 0)
         {
@@ -137,7 +142,7 @@ class ProductPriceController extends Controller
                     return (Array)$item;
                 });
 
-        return response($this->BatchUpdate($version->toArray(),$rows->all()), 200);
+        return response($this->BatchUpdate($version->toArray(),$rows->all(), $version->freight - $oldFreight), 200);
     }
 
 
@@ -167,7 +172,7 @@ class ProductPriceController extends Controller
             $where["product_brand"] = $request->product_brand;
         }
 
-        $list = $this->priceVersion->where($where)->orderBy("date","desc")->get();
+        $list = $this->priceVersion->where($where)->orderBy("created_at","desc")->get();
         return response(["status" => "success", "data" => PriceTrackResouce::collection($list)], 200);
     }
 
@@ -191,9 +196,10 @@ class ProductPriceController extends Controller
     /**
      * @params  $version [category, product_brand, date,version, atta_id]
      * @params   $priceRows
+     * @param  $freight integer
      */
 
-    private function BatchUpdate( Array $version,Array $rows):array
+    private function BatchUpdate( Array $version,Array $rows, Int $freight = 0):array
     {
         try {
             $this->db->beginTransaction();
@@ -206,16 +212,14 @@ class ProductPriceController extends Controller
                     $row["version"] = $model->id;
                     $row["version_l"] = $model->version;
                     $row["created_at"] = time();
-
-                    if ($model->freight > 0)
-                        $row["price"] += $model->freight;
+                    $row["price"] += $freight;
                 }
 
                 $result = $this->db->table($manager->table)->insert($rows);
 
                 if ($result) {
                     $this->db->commit();
-                    return ["status" => "success","errmsg" => ""];
+                    return ["status" => "success", "freight" => $freight];
                 }
             }
         }
@@ -234,10 +238,35 @@ class ProductPriceController extends Controller
 
         //版本号
         $version = $this->priceVersion->find($request->vid);
+        $temp = $this->LoadCategoryAndBrandFromVersion($version);
 
         return response(["status" => "success",
-                        "data" => $this->QueryPrice($version->product_brand, $version->id),
-                        "notice" => "发布于:".$version->created_at.", 运费: ".$version->freight.", 当前价格已弃用"
+                        "data"    => $this->QueryPrice($version->product_brand, $version->id),
+                        //"notice" => "发布于:".$version->created_at.", 运费: ".$version->freight.", 当前价格可能不适用"
+                        "notice"  => sprintf("分类：%s, 品牌：%s, 当前价格发布于：%s, 运费：%s",$temp["category_name"],$temp["brand_name"],$version->created_at,$version->freight)
                 ]);
+    }
+
+    public function StandardPrice(Request $request)
+    {
+        $version = $this->priceVersion->where(["category" => $request->category,"product_brand" => $request->product_brand, "standard" => 1])->orderBy("created_at", "desc")->first();
+
+        if (!$version)
+            return response(["status" => "error", "errmsg" => "目标不存在"]);
+        
+        $temp = $this->LoadCategoryAndBrandFromVersion($version);
+
+        return response(["status" => "success",
+            "data" => $this->QueryPrice($version->product_brand, $version->id),
+            "notice"  => sprintf("分类：%s, 品牌：%s, 当前价格发布于：%s, 运费：%s",$temp["category_name"],$temp["brand_name"],$version->created_at,$version->freight)
+        ]);
+    }
+
+    private function LoadCategoryAndBrandFromVersion(PriceVersion $version):array
+    {
+        $manager = $this->manager->find($version->product_brand);
+        $category = $this->category->find($manager->category_id);
+
+        return ["category_name" => $category->name, "brand_name" => $manager->brand_name];
     }
 }

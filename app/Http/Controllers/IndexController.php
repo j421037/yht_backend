@@ -342,4 +342,20 @@ class IndexController extends Controller
 
         return response(["status" => "success", "data" => $data], 200);
     }
+
+    private function LoadTarget($year = null)
+    {
+        $target = 0;
+        if (!$year) {
+            $year = date("Y",time());
+        }
+
+        $item = $this->target->where(["user_id" => $this->getUserId(), "year" => $year])->first();
+
+        if ($item) {
+            $target = $item->target * 10000;
+        }
+
+        return number_format($target, 2);
+    }
 }

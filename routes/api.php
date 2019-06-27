@@ -250,6 +250,7 @@ Route::group(['middleware' => 'refresh.token'], function () {
         Route::post("products/prices/info", "ProductPriceController@PriceTrack");
         Route::post("products/prices/history", "ProductPriceController@HistoryPrice");
         Route::post("cost/role","CostController@rule");
+        Route::post("products/prices/standard", "ProductPriceController@StandardPrice");
         /**单品牌报价**/
         Route::post("products/params","ProductMakeOfferController@params");
         Route::post("products/offers","ProductMakeOfferController@OfferList");

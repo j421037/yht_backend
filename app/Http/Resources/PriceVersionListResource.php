@@ -15,8 +15,9 @@ class PriceVersionListResource extends JsonResource
     public function toArray($request)
     {
         return [
-            "label" => $this->version." (日期: ".date("Y-m-d",$this->date).")",
+            "label" => $this->version." (日期: ".$this->created_at." 运费：".$this->freight.")",
             "value" => $this->id,
+            "freight"   => $this->freight
         ];
     }
 }

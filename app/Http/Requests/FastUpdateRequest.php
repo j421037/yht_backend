@@ -29,7 +29,8 @@ class FastUpdateRequest extends FormRequest
             "category"      => "required|numeric",
             "product_brand" => "required|numeric",
             "operate"       => "required|numeric",
-            "new_version"   => "required|alpha_dash"
+            "new_version"   => "required|alpha_dash",
+            "freight"       => "required|numeric"
         ];
     }
 }
