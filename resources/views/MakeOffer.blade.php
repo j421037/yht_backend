@@ -95,9 +95,8 @@
                 @foreach($fields as $v)
                     <th>{{$v}}</th>
                 @endforeach
-                <th>单位</th>
                 <th>数量</th>
-                <th>单价</th>
+
                 <th>金额</th>
                 <th>备注</th>
             </tr>
@@ -107,9 +106,7 @@
                     @foreach($fields as $fk => $fv)
                         <td>{{$v->$fk}}</td>
                     @endforeach
-                    <td>{{$offers->unit}}</td>
                     <td>1</td>
-                    <td>{{$v->price}}</td>
                     <td>{{$v->price}}</td>
                     <td></td>
                 </tr>
@@ -153,6 +150,8 @@
         <div class="right-buttom">
             <h4>广东首家机电产品综合服务商   服务热线:400-692-5588</h4>
         </div>
+
     </div>
+
 </body>
 </html>

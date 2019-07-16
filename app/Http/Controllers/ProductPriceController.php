@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\LoadProductsFromVersionResource;
 use App\ProductCategory;
 use App\ProductsManager;
 use App\PriceVersion;
@@ -48,12 +49,20 @@ class ProductPriceController extends Controller
      */
     public function PriceList(ProductPriceListRequest $request)
     {
+
         return response(["status" => "success","data" => $this->QueryPrice($request->id)]);
     }
 
     private function QueryPrice($product_id, $version = null) :array
     {
         $row = $this->manager->find($product_id);
+
+        if (!$version) {
+            $priceVs = $this->priceVersion->where(["category" => $row->category_id, "product_brand" => $row->id])->orderBy("id", "desc")->first();
+
+            if ($priceVs)
+                $version = $priceVs->id;
+        }
 
         return ["id" => $row->id,"column" => $this->getColumn($row->columns), "rows" => $this->getPriceData($this->db, $row, $version)];
     }
@@ -185,11 +194,14 @@ class ProductPriceController extends Controller
      */
     private function getColumn($json) :array
     {
-        $column = $this->groupField($json);
-        array_push($column,["label" => "单位","value" => "unit"]);
-        array_push($column,["label" => "价格","value" => "price"]);
+        $columns = $this->groupField($json);
+        $indexs = [];
 
-        return $column;
+//        $indexs = collect($columns)->pluck("index")->all();
+//        //二维数组排序
+//        array_multisort($indexs, SORT_ASC, $columns);
+
+        return collect($columns)->sortBy("index")->values()->all();
     }
 
 
@@ -253,7 +265,7 @@ class ProductPriceController extends Controller
 
         if (!$version)
             return response(["status" => "error", "errmsg" => "目标不存在"]);
-        
+
         $temp = $this->LoadCategoryAndBrandFromVersion($version);
 
         return response(["status" => "success",
@@ -268,5 +280,33 @@ class ProductPriceController extends Controller
         $category = $this->category->find($manager->category_id);
 
         return ["category_name" => $category->name, "brand_name" => $manager->brand_name];
+    }
+
+    public function LoadProductsFromVersion($id)
+    {
+
+        $version = $this->priceVersion->find($id);
+
+        $manager = $this->manager->find($version->product_brand);
+
+        $columns = collect(json_decode($manager->columns,true));
+
+        $prices = $this->db->table($manager->table)->where(["version" => $version->id])->get();
+        $prices = collect($prices);
+
+        foreach ($prices as &$price) {
+            $label = [];
+            foreach ($price as $key => $value) {
+                $items = $columns->whereIn("field", $key);
+                $items->map(function ($item) use (&$label, $price) {
+
+                    array_push($label,sprintf("%s(%s)",$item["description"], $price->{$item["field"]}));
+                });
+            }
+
+            $price->label = implode(",",$label);
+        }
+
+        return response(["status" => "success", "data" => LoadProductsFromVersionResource::collection($prices)]);
     }
 }

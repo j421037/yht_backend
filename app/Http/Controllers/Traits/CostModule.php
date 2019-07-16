@@ -8,6 +8,7 @@
  */
 namespace App\Http\Controllers\Traits;
 
+use App\GeneralOffer;
 use App\ProductsManager;
 use Illuminate\Database\DatabaseManager;
 trait CostModule {
@@ -20,9 +21,12 @@ trait CostModule {
      *
      * @return $data rows
      */
-    public function getPriceData(DatabaseManager $db, ProductsManager $manager, $version = null) :array
+    public function getPriceData(DatabaseManager $db, ProductsManager $manager, $version = null, array $price_ids = []) :array
     {
         $groupFields = $this->groupField($manager->columns);
+
+        $orderField = $manager->orderby;
+        $sort = $manager->sort;
 
         $field = collect($groupFields)->pluck('value')->toArray();
         $sql = "SELECT * FROM (SELECT * FROM {$manager->table} ";
@@ -30,18 +34,18 @@ trait CostModule {
         if ($version) {
             $sql .= " WHERE version = {$version} ";
         }
+        else {
+            if (count($price_ids) > 0 && !in_array(0, $price_ids)) {
+                $sql .= " WHERE id IN  (".implode(",", $price_ids).") ";
+            }
+        }
 
-        $sql .= " ORDER BY `created_at` DESC LIMIT 0,99999999999) AS T0 GROUP BY ".implode(",",$field);
+        if ($orderField && $sort)
+            $sql .= " ORDER BY {$orderField} {$sort} LIMIT 0,99999999999) AS T0 ";
+        else
+            $sql .= "  LIMIT 0,99999999999) AS T0 ";
 
         $data = $db->select($sql);
-
-        foreach ($data as $v)
-        {
-            if ($manager->method == 0)
-                $v->unit = "元/条";
-            else if ($manager->method == 1)
-                $v->unit = "元/吨";
-        }
 
         return (array) $data;
     }
@@ -53,7 +57,9 @@ trait CostModule {
 
         foreach ($arr as $v)
         {
-            array_push($column,["label" => $v->description,"value" => $v->field]);
+            if (!isset($v->index))
+                $v->index = 0;
+            array_push($column,["label" => $v->description,"value" => $v->field,"index" => $v->index]);
         }
 
         return $column;

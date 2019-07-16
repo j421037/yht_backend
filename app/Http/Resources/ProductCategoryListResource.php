@@ -1,12 +1,13 @@
 <?php
 
 namespace App\Http\Resources;
-
+use App\FieldTypeItem;
 use App\PriceVersion;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 class ProductCategoryListResource extends JsonResource
 {
+    private $fidleItems;
     /**
      * Transform the resource into an array.
      *
@@ -15,6 +16,8 @@ class ProductCategoryListResource extends JsonResource
      */
     public function toArray($request)
     {
+        if (!($this->fidleItems instanceof FieldTypeItem))
+            $this->fidleItems = new FieldTypeItem;
         return [
             "id"   => $this->id,
             "name" => $this->name,
@@ -35,7 +38,7 @@ class ProductCategoryListResource extends JsonResource
             $data["table"]  = $v->table;
             $data["method"] = $v->method;
             $data["method_l"] = $v->method == 0 ? "面价打折" : "吨价下浮";
-            $data["fields"] = $this->decodeDescription($v->columns);
+            $data["fields"] = $this->decodeDescription($v->columns, $v->id);
             $data["notice"] = $this->notice($v->id);
             array_push($rows, $data);
         }
@@ -43,16 +46,27 @@ class ProductCategoryListResource extends JsonResource
         return $rows;
     }
 
-    private function decodeDescription($json) :array
+    private function decodeDescription($json, $tableId) :array
     {
         $array = json_decode($json,true);
         $rows = [];
         $fields = [];
 
-        array_walk($array, function($item) use (&$rows, &$fields) {
-            array_push($rows,$item["field"]."(".$item["description"].")");
-            array_push($fields, ["key" => $item["field"],"value" => $item["description"]]);
-        });
+        foreach ($array as $item) {
+
+            $options = [];
+
+            if ($item["type"] == "select") {
+                $items = $this->fidleItems->where(["table_id" => $tableId, "field" => $item["field"]])->orderBy("key")->get();
+
+                $items->map(function($it) use (&$options) {
+                    array_push($options, ["label" => $it->key, "value" => $it->value]);
+                });
+            }
+
+            array_push($rows, $item["field"] . "(" . $item["description"] . ")");
+            array_push($fields, ["key" => $item["field"], "value" => $item["description"], "type" => $item["type"], "options" => $options]);
+        }
 
         return ["description" => implode("、",$rows), "mapping" => $fields];
     }

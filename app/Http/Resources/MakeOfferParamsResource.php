@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\MakeOfferFormula;
 use App\PriceVersion;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -39,7 +40,9 @@ class MakeOfferParamsResource extends JsonResource
                             "products"  => $v->products,
                             "field_map" => $v->field_map,
                             "mode"      => $v->method,
-                            "versions"  => $this->getVersions($v->id)
+                            "versions"  => $this->getVersions($v->id),
+                            "formula_param"   => $v->formula_param,
+                            "formulas"  => $this->getFormula($v->id)
                     ]);
         }
 
@@ -60,5 +63,20 @@ class MakeOfferParamsResource extends JsonResource
         }
 
         return $data;
+    }
+
+    private function getFormula($fid) : array
+    {
+        if (!$fid)
+            return [];
+
+        $result = [];
+        $formulas = MakeOfferFormula::where(["table_id" => $fid])->get();
+
+        foreach ($formulas as $formula) {
+            array_push($result, ["label" => $formula->formula, "value" => $formula->id]);
+        }
+
+        return $result;
     }
 }

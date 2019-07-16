@@ -22,6 +22,8 @@ class ProductManagerListResource extends JsonResource
             "method"    => $this->mode,
             "description"     => $this->buildField($this->columns),
             "field"     => json_decode($this->columns,true),
+            "orderby"   => $this->orderby,
+            "sort"      => $this->sort,
         ];
     }
 

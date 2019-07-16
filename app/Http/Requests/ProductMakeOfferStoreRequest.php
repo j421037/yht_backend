@@ -27,8 +27,7 @@ class ProductMakeOfferStoreRequest extends FormRequest
         return [
             "serviceor_id"      => "required|numeric",
             "customer_id"       => "required|numeric",
-            "operate"           => "required|numeric",
-            "operate_val"       => "required|numeric",
+            "formula_id"       => "required|numeric",
             "product_brand_id"  => "required|numeric",
             "version_id"        => "required|numeric",
             "products"          => "required|array"

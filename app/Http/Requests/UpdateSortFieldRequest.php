@@ -4,7 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class ProductManagerStoreRequest extends FormRequest
+class UpdateSortFieldRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -24,10 +24,9 @@ class ProductManagerStoreRequest extends FormRequest
     public function rules()
     {
         return [
-            "category"      => "required",
-            "brand"         => "required",
-            "table"         => "required|string",
-            "method"        => "required",
+            "table_id"  => "required|numeric",
+            "field"     => "required",
+            "sort"      => "required"
         ];
     }
 }

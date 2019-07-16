@@ -243,6 +243,10 @@ Route::group(['middleware' => 'refresh.token'], function () {
         Route::post("products/table/create", "ProductManagerController@store");
         Route::post("products/table/list", "ProductManagerController@PriceTableList");
         Route::post("products/table/delete", "ProductManagerController@PriceTableDelete");
+        Route::get("products/table/id/{id}", "ProductManagerController@SinglePriceTable");
+        Route::post("products/table/field", "ProductManagerController@AppendField");
+        Route::put("products/table/field", "ProductManagerController@AppendField");
+        Route::delete("products/table/field/id/{id}/field/{field}", "ProductManagerController@DeleteField");
         Route::post("products/prices","ProductPriceController@PriceList");
         Route::post("products/prices/update", "ProductPriceController@update");
         Route::post("products/prices/fastupdate","ProductPriceController@FastUpdate");
@@ -251,12 +255,28 @@ Route::group(['middleware' => 'refresh.token'], function () {
         Route::post("products/prices/history", "ProductPriceController@HistoryPrice");
         Route::post("cost/role","CostController@rule");
         Route::post("products/prices/standard", "ProductPriceController@StandardPrice");
+//        Route::get("products/spec/table_id/{table_id}", "ProductSpecsController@all");
+//        Route::post("products/spec", "ProductSpecsController@store");
+//        Route::delete("products/spec/id/{id}", "ProductSpecsController@delete");
+//        Route::get("products/spec", "ProductSpecsController@allSpecBelongToTable");
+        Route::get("product/fieldtype", "FieldTypeController@all");
+        Route::post("product/table/select/item", "FieldTypeController@AppendItem");
+        Route::get("product/table/select/item/tableId/{tableId}/field/{field}", "FieldTypeController@Items");
+        Route::delete("product/table/select/item/id/{id}", "FieldTypeController@DeleteItem");
+        Route::put("product/table/sort", "ProductManagerController@UpdateSortField");
+        Route::put("allcation/field", "ProductManagerController@AllocationField");
+        Route::post("makeoffer/formula", "ProductMakeOfferController@AppendFormula");
+        Route::get("makeoffer/formula/id/{id}", "ProductMakeOfferController@LoadFormula");
+        Route::put("makeoffer/formula/id/{id}", "ProductMakeOfferController@UpdateFormula");
+        Route::put("product/table/field/index", "ProductManagerController@UpdateFieldIndex");
+        Route::get("offer/load/param/tableId/{tableId}", "ProductMakeOfferController@SignParam");
+
         /**单品牌报价**/
         Route::post("products/params","ProductMakeOfferController@params");
         Route::post("products/offers","ProductMakeOfferController@OfferList");
         Route::post("products/offer/store", "ProductMakeOfferController@store");
         Route::post("products/offer/modify", "ProductMakeOfferController@modify");
-
+        Route::get("load/products/from/version/id/{id}", "ProductPriceController@LoadProductsFromVersion");
 
     });
     /**不需要验证权限**/
@@ -318,3 +338,5 @@ Route::post('project/all', 'ProjectController@all');
 Route::post('project/add', 'ProjectController@add');
 Route::post('project/upload', 'ProjectController@upload');
 Route::post('project/projectBySearch', 'ProjectController@getProjectBySearch');
+
+

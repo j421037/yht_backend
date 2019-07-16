@@ -2,9 +2,10 @@
 
 namespace App\Http\Requests;
 
+use App\FieldTypeItem;
 use Illuminate\Foundation\Http\FormRequest;
 
-class ProductManagerStoreRequest extends FormRequest
+class FieldTypeAppendItemRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -24,10 +25,10 @@ class ProductManagerStoreRequest extends FormRequest
     public function rules()
     {
         return [
-            "category"      => "required",
-            "brand"         => "required",
-            "table"         => "required|string",
-            "method"        => "required",
+            "tableId" => "required",
+            "key"     => "required",
+            "value"   => "required",
+            "field"   => "required"
         ];
     }
 }

@@ -21,7 +21,7 @@ class PriceTrackResouce extends JsonResource
             "date"          => $this->created_at->format("Y-m-d H:i:s"),
             "remark"        => $this->remark,
             "category_name" => ProductCategory::find($this->category)->name,
-            "brand_name"    => ProductsManager::find($this->product_brand)->brand_name,
+            "brand_name"    => $this->brandName($this->product_brand),
             "data"          => [
                 [
                     "freight" => $this->freight,
@@ -31,5 +31,16 @@ class PriceTrackResouce extends JsonResource
                 ]
             ]
         ];
+    }
+
+    public function brandName($brand)
+    {
+        if ($brand) {
+            $result = ProductsManager::find($this->product_brand);
+            if ($result)
+                return $result->brand_name;
+        }
+
+        return null;
     }
 }
